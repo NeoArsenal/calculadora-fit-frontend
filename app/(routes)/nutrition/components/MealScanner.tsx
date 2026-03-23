@@ -17,7 +17,6 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // 1. OBTENER EL PERMISO Y EL FLUJO
   const startCamera = async () => {
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -35,14 +34,12 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
     }
   };
 
-  // 2. CONECTAR EL VIDEO (Trick para evitar pantalla negra)
   useEffect(() => {
     if (isCameraActive && videoRef.current && stream) {
       videoRef.current.srcObject = stream;
     }
   }, [isCameraActive, stream]);
 
-  // 3. LIMPIEZA AL CERRAR
   useEffect(() => {
     return () => {
       if (stream) {
@@ -51,9 +48,7 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
     };
   }, [stream]);
 
-  // 4. CAPTURA Y ENVÍO A SPRING BOOT
-const captureAndScan = useCallback(async () => {
-    // 1. Verificación de referencias
+  const captureAndScan = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
     
     setIsProcessing(true);
@@ -61,7 +56,6 @@ const captureAndScan = useCallback(async () => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
 
-    // 2. Ajustar dimensiones del canvas al video real
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     
@@ -71,10 +65,8 @@ const captureAndScan = useCallback(async () => {
       return;
     }
 
-    // 3. Dibujar el frame actual del video en el canvas
     ctx.drawImage(video, 0, 0);
 
-    // 4. Convertir a Blob y enviar
     canvas.toBlob(async (blob) => {
       if (!blob) {
         setIsProcessing(false);
@@ -82,20 +74,11 @@ const captureAndScan = useCallback(async () => {
       }
 
       try {
-        // 🚀 USAMOS EL SERVICIO BLINDADO: 
-        // Esto ya maneja el FormData("image") y los errores de tokens
         const result = await scanMeal(blob);
-
-        // Si llega aquí, es porque la IA respondió con éxito (200 OK)
         onScanResult(result);
-        
       } catch (err: any) {
-        // 🚨 ALERTA DE INGENIERÍA:
-        // Si el error es 429 (sin tokens), el mensaje dirá: 
-        // "Kallp AI: Límite de escaneos diario alcanzado..."
         console.error("Error en el escaneo:", err);
-        alert(`⚠️ KALLP AI: ${err.message}`);
-        
+        alert(`⚠️ KALLP AI: ${err.message || "Error desconocido"}`);
       } finally {
         setIsProcessing(false);
       }

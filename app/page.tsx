@@ -25,10 +25,10 @@ export default function DashboardPage() {
 
   // 1. MANEJO DE ERRORES REALES (Si el backend está apagado o falla gravemente)
   if (error) return (
-    <div className="min-h-screen bg-[#050505] flex items-center justify-center p-10">
-      <div className="bg-red-900/20 border border-red-500/50 p-6 rounded-xl text-center max-w-md">
-        <p className="text-red-400 font-mono text-sm mb-4">[SISTEMA_OFFLINE]: {error}</p>
-        <button onClick={() => window.location.reload()} className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-red-500">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#050505] flex items-center justify-center p-10 transition-colors duration-300">
+      <div className="bg-white dark:bg-red-900/20 border border-red-200 dark:border-red-500/50 p-6 rounded-xl text-center max-w-md shadow-2xl">
+        <p className="text-red-500 dark:text-red-400 font-mono text-sm mb-4">[SISTEMA_OFFLINE]: {error}</p>
+        <button onClick={() => window.location.reload()} className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-xs uppercase hover:bg-red-500 transition-colors">
           Reintentar Conexión
         </button>
       </div>
@@ -40,12 +40,12 @@ export default function DashboardPage() {
     return (
       <main className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
         <div className="text-center space-y-6 max-w-md animate-in zoom-in duration-500">
-          <h1 className="text-4xl font-black italic uppercase">
+          <h1 className="text-4xl font-black italic uppercase text-gray-900 dark:text-white">
             Kallp<span className="text-blue-500">:</span>
           </h1>
-          <div className="bg-card border border-border p-8 rounded-2xl shadow-lg">
-            <p className="text-xl font-bold mb-2">¡Bienvenido al sistema!</p>
-            <p className="text-muted-foreground text-sm mb-6">
+          <div className="bg-white dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800 p-8 rounded-2xl shadow-2xl backdrop-blur-md transition-colors duration-300">
+            <p className="text-xl font-bold mb-2 text-gray-900 dark:text-white">¡Bienvenido al sistema!</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
               Tu base de datos está limpia. Registra tu primer entrenamiento para activar el panel de análisis biopsicológico.
             </p>
             {/* Reutilizamos tu formulario para que puedan agregar el primer dato y salir del Empty State */}

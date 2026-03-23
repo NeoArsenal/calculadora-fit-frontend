@@ -5,16 +5,31 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Droplets, Check, Zap, Brain, Utensils, Trophy } from "lucide-react";
 import MealScanner from "./components/MealScanner";
 import ConfirmMealModal from "./components/ConfirmMealModal"; 
-// 📡 Servicios de conexión
-import { saveMeal, getDashboardSummary } from "./services/nutritionService"; 
+import { saveMeal, getDashboardSummary, MealData } from "./services/nutritionService"; 
+
+interface DailyMacros {
+  calories: number;
+  target: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+}
+
+interface MealItemData {
+  id: number | string;
+  name: string;
+  kcal: number;
+  p: number;
+  time: string;
+  color: string;
+}
 
 export default function NutritionDashboard() {
   const [showScanner, setShowScanner] = useState(false);
   const [scannedData, setScannedData] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // ESTADO DINÁMICO: Empezamos en 0 y cargamos desde PostgreSQL
-  const [dailyMacros, setDailyMacros] = useState({
+  const [dailyMacros, setDailyMacros] = useState<DailyMacros>({
     calories: 0,
     target: 2450, 
     protein: 0,
@@ -22,9 +37,8 @@ export default function NutritionDashboard() {
     fats: 0
   });
 
-  const [meals, setMeals] = useState<any[]>([]);
+  const [meals, setMeals] = useState<MealItemData[]>([]);
 
-  // 🔄 CARGA INICIAL: Sincroniza con Spring Boot al abrir la página
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -66,11 +80,9 @@ export default function NutritionDashboard() {
     setShowScanner(false);
   };
 
-  // 💾 GUARDADO REAL: Envía a la DB y actualiza la UI al instante
   const handleConfirmMeal = async (mealFromAI: any) => {
     setIsSaving(true);
     
-    // Normalización de datos para el Backend
     const results = mealFromAI?.recognition_results || mealFromAI?.recognitionResults || [];
     const dish = results[0] || {};
     const info = dish?.nutritional_info || dish?.nutritionalInfo || {};
@@ -210,7 +222,14 @@ export default function NutritionDashboard() {
 
 // --- COMPONENTES AUXILIARES ---
 
-function MacroProgressBar({ label, current, target, color }: any) {
+interface MacroProgressBarProps {
+  label: string;
+  current: number;
+  target: number;
+  color: string;
+}
+
+function MacroProgressBar({ label, current, target, color }: MacroProgressBarProps) {
     const progress = (current / target) * 100;
     return (
         <div className="space-y-2">
@@ -225,7 +244,7 @@ function MacroProgressBar({ label, current, target, color }: any) {
     );
 }
 
-function MealItem({ name, kcal, p, time, color }: any) {
+function MealItem({ name, kcal, p, time, color }: MealItemData) {
     return (
         <div className="flex items-center gap-6 group">
             <div className="flex flex-col items-center">
@@ -282,7 +301,13 @@ function PerformanceStack() {
   );
 }
 
-function StackItem({ name, dose, completed }: any) {
+interface StackItemProps {
+  name: string;
+  dose: string;
+  completed: boolean;
+}
+
+function StackItem({ name, dose, completed }: StackItemProps) {
     return (
         <div className={`flex items-center justify-between p-4 rounded-2xl border ${completed ? 'bg-blue-600/5 border-blue-500/20' : 'bg-transparent border-white/5 opacity-40'}`}>
             <div className="flex flex-col">

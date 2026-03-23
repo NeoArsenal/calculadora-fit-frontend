@@ -1,17 +1,18 @@
 "use client";
 import { Check, Flame, Trophy } from "lucide-react";
 
-export default function ConfirmMealModal({ data, onConfirm, onCancel, loading }: any) {
-  
-  // 🛑 ESCUDO 1: Si no hay data o la API falló (Error 429/500), no renderizamos nada.
-  // Esto mata la pantalla negra de "This page couldn't load".
+interface ConfirmMealModalProps {
+  data: any;
+  onConfirm: (meal: any) => void;
+  onCancel: () => void;
+  loading: boolean;
+}
+
+export default function ConfirmMealModal({ data, onConfirm, onCancel, loading }: ConfirmMealModalProps) {
   if (!data) return null;
 
-  // 🛡️ ESCUDO 2: Normalización. Extraemos la lista de resultados con seguridad.
-  // Si no existen las propiedades, 'results' será una lista vacía [].
   const results = data?.recognitionResults || data?.recognition_results || [];
   
-  // Si la lista está vacía (API falló), cerramos el modal o mostramos error sutil.
   if (results.length === 0) {
     return (
       <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -26,7 +27,6 @@ export default function ConfirmMealModal({ data, onConfirm, onCancel, loading }:
   const meal = results[0] || {};
   const macros = meal?.nutritionalInfo || meal?.nutritional_info || {};
 
-  // 🚀 ESCUDO 3: El convertidor de NaN a 0.
   const formatVal = (val: any) => {
     const num = parseFloat(val);
     return !isNaN(num) ? Math.round(num) : 0;

@@ -61,15 +61,15 @@ export default function BodyCompositionMap({ records, onSelectPart, onRefresh }:
   };
 
   return (
-    <Card className="bg-gray-900/40 backdrop-blur-md border border-gray-800 shadow-2xl p-5 col-span-1 lg:col-span-2">
+    <Card className="bg-white dark:bg-gray-900/40 backdrop-blur-md border border-gray-200 dark:border-gray-800 shadow-2xl p-5 col-span-1 lg:col-span-2">
       <CardContent className="p-0 flex flex-col items-center">
         {/* Header con Estado */}
         <div className="w-full flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-white flex items-center gap-2 tracking-tight">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 tracking-tight">
             <User className="text-blue-500" size={22} />
             Mapa de Composición Corporal
           </h3>
-          <p className="text-sm font-medium text-emerald-400 bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-900/40">
+          <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-900/40">
             Escaneo: OK
           </p>
         </div>
@@ -77,23 +77,23 @@ export default function BodyCompositionMap({ records, onSelectPart, onRefresh }:
         {/* --- EL MODELO SIMULADO --- */}
         <div className="relative w-full h-[480px] lg:h-[500px] 
           bg-gradient-to-br from-[#0a0f1c] via-[#0d1b2a] to-[#050505]
-          rounded-xl border border-gray-800 p-4 flex items-center justify-center overflow-hidden">
+          rounded-xl border border-gray-200 dark:border-gray-800 p-4 flex items-center justify-center overflow-hidden shadow-inner">
 
           {/* 🔥 CANVAS 3D */}
           <BodyScanner3D records={records} onSelectPart={onSelectPart} />
 
           {/* UI encima */}
           <div className="absolute top-10 right-10 text-right z-10">
-            <p className="text-xs font-bold text-gray-500">PESO ACTUAL</p>
+            <p className="text-xs font-bold text-gray-400">PESO ACTUAL</p>
             <p className="text-3xl font-black text-white">
-              {weight} <span className="text-sm text-gray-600">kg</span>
+              {weight} <span className="text-sm text-gray-500">kg</span>
             </p>
           </div>
 
           <div className="absolute top-1/2 left-5 -translate-y-1/2 z-10">
             <p className="text-xs font-bold text-emerald-500">CINTURA</p>
-            <p className="text-3xl font-black text-green-400">
-              {waist} <span className="text-sm text-gray-600">cm</span>
+            <p className="text-3xl font-black text-emerald-400">
+              {waist} <span className="text-sm text-gray-500">cm</span>
             </p>
           </div>
         </div>

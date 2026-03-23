@@ -1,17 +1,23 @@
 const BASE_URL = "http://localhost:8080/api/nutrition";
 
-// ✅ Escáner de IA
+export interface MealData {
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
 export async function scanMeal(imageBlob: Blob) {
     const formData = new FormData();
     formData.append("image", imageBlob, "capture.jpg");
 
-    const res = await fetch(`http://localhost:8080/api/nutrition/ai/scan`, {
+    const res = await fetch(`${BASE_URL}/ai/scan`, {
         method: "POST",
         body: formData,
     });
 
     if (!res.ok) {
-        // 🔍 Intentamos obtener el mensaje de error que enviamos desde Spring Boot
         const errorText = await res.text(); 
         throw new Error(errorText || "Error desconocido en el servidor");
     }
@@ -19,8 +25,7 @@ export async function scanMeal(imageBlob: Blob) {
     return res.json();
 }
 
-// ✅ ESTA ES LA QUE TE FALTA EXPORTAR
-export async function saveMeal(mealData: any) {
+export async function saveMeal(mealData: MealData) {
     const res = await fetch(`${BASE_URL}/meals`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

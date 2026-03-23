@@ -52,43 +52,43 @@ export default function RecordForm({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <Card className="border border-gray-700 bg-gray-800 shadow-2xl">
+    <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/40 shadow-2xl backdrop-blur-md">
       <CardHeader>
-        <CardTitle className="text-xl font-bold text-blue-400">Nuevo Registro Diario</CardTitle>
+        <CardTitle className="text-xl font-bold text-blue-500 dark:text-blue-400">Nuevo Registro Diario</CardTitle>
       </CardHeader>
       
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* CAMPO: PESO */}
           <div className="grid gap-2">
-            <Label htmlFor="weight" className="text-sm text-gray-400">Peso Corporal (kg)</Label>
+            <Label htmlFor="weight" className="text-sm text-gray-700 dark:text-gray-400">Peso Corporal (kg)</Label>
             <Input 
               id="weight"
               type="number" 
               step="0.1" 
               value={weight} 
               onChange={(e) => setWeight(e.target.value)}
-              className="bg-gray-700 border border-gray-600 outline-none focus:border-blue-500" 
+              className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white outline-none focus:border-blue-500" 
               placeholder="Ej: 86.5"
               disabled={isSubmitting} // Bloquear durante carga
             />
-            {errors.weightKg && <span className="text-red-400 text-[10px]">{errors.weightKg}</span>}
+            {errors.weightKg && <span className="text-red-500 dark:text-red-400 text-[10px]">{errors.weightKg}</span>}
           </div>
 
           {/* CAMPO: CINTURA */}
           <div className="grid gap-2">
-            <Label htmlFor="waist" className="text-sm text-gray-400">Circunferencia Cintura (cm)</Label>
+            <Label htmlFor="waist" className="text-sm text-gray-700 dark:text-gray-400">Circunferencia Cintura (cm)</Label>
             <Input 
               id="waist"
               type="number" 
               step="0.1" 
               value={waist} 
               onChange={(e) => setWaist(e.target.value)}
-              className="bg-gray-700 border border-gray-600 outline-none focus:border-blue-500" 
+              className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white outline-none focus:border-blue-500" 
               placeholder="Ej: 90"
               disabled={isSubmitting} // Bloquear durante carga
             />
-            {errors.waistCircumferenceCm && <span className="text-red-400 text-[10px]">{errors.waistCircumferenceCm}</span>}
+            {errors.waistCircumferenceCm && <span className="text-red-500 dark:text-red-400 text-[10px]">{errors.waistCircumferenceCm}</span>}
           </div>
 
           {/* BOTÓN CON ESTADO DE CARGA (UX PROFESIONAL) */}

@@ -52,16 +52,16 @@ export default function HistoryTable({ records, onDeleteSuccess }: { records: an
   };
 
   return (
-    <Card className="border-gray-800 bg-gray-900/40 backdrop-blur-md shadow-2xl overflow-hidden">
-      <CardHeader className="border-b border-gray-800 bg-gray-800/20">
-        <CardTitle className="text-xl font-bold text-white flex items-center gap-2">
+    <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/40 backdrop-blur-md shadow-2xl overflow-hidden">
+      <CardHeader className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/20">
+        <CardTitle className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <History className="text-blue-500" size={20} />
           Historial de Progreso
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0"> {/* Quitamos padding para que la tabla llegue a los bordes */}
         <Table>
-          <TableHeader className="bg-gray-800/50">
+          <TableHeader className="bg-gray-50 dark:bg-gray-800/50">
             <TableRow className="hover:bg-transparent border-gray-800">
               <TableHead className="text-gray-400 font-semibold py-4 px-6 text-center">Fecha</TableHead>
               <TableHead className="text-gray-400 font-semibold py-4 text-center">Peso</TableHead>
@@ -71,48 +71,48 @@ export default function HistoryTable({ records, onDeleteSuccess }: { records: an
           </TableHeader>
           <TableBody>
             {records.map((record) => (
-              <TableRow key={record.id} className="border-gray-800 hover:bg-blue-500/5 transition-colors group">
+              <TableRow key={record.id} className="border-gray-200 dark:border-gray-800 hover:bg-blue-500/5 transition-colors group">
                 <TableCell className="py-4 px-6">
-                  <div className="flex items-center justify-center gap-2 text-gray-300">
-                    <Calendar size={14} className="text-blue-400" />
+                  <div className="flex items-center justify-center gap-2 text-gray-600 dark:text-gray-300">
+                    <Calendar size={14} className="text-blue-500 dark:text-blue-400" />
                     {record.recordDate}
                   </div>
                 </TableCell>
                 <TableCell className="py-4">
                   <div className="flex items-center justify-center gap-2">
-                    <Scale size={14} className="text-gray-500" />
-                    <span className="text-blue-400 font-bold">{record.weightKg}</span>
-                    <span className="text-xs text-gray-600">kg</span>
+                    <Scale size={14} className="text-gray-400 dark:text-gray-500" />
+                    <span className="text-blue-500 dark:text-blue-400 font-bold">{record.weightKg}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-600">kg</span>
                   </div>
                 </TableCell>
                 <TableCell className="py-4">
                   <div className="flex items-center justify-center gap-2">
-                    <Ruler size={14} className="text-gray-500" />
-                    <span className="text-green-400 font-bold">{record.waistCircumferenceCm}</span>
-                    <span className="text-xs text-gray-600">cm</span>
+                    <Ruler size={14} className="text-gray-400 dark:text-gray-500" />
+                    <span className="text-emerald-500 dark:text-green-400 font-bold">{record.waistCircumferenceCm}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-600">cm</span>
                   </div>
                 </TableCell>
                 <TableCell className="text-right py-4 px-6">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                      <Button variant="ghost" size="icon" className="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-500/10 transition-all">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-gray-900 border-gray-800 text-white">
+                    <AlertDialogContent className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white">
                       <AlertDialogHeader>
                         <AlertDialogTitle className="text-xl">¿Confirmar eliminación?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-gray-400">
-                          Esta acción es irreversible. Se borrará el registro del día <span className="text-white font-semibold">{record.recordDate}</span>.
+                        <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
+                          Esta acción es irreversible. Se borrará el registro del día <span className="text-gray-900 dark:text-white font-semibold">{record.recordDate}</span>.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-gray-800 hover:bg-gray-700 border-none text-white">
+                        <AlertDialogCancel className="bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-gray-800 dark:hover:bg-gray-700 border-none dark:text-white">
                           Cancelar
                         </AlertDialogCancel>
                         <AlertDialogAction 
                           onClick={() => handleDelete(record.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white"
+                          className="bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white"
                         >
                           Eliminar de Kallp:
                         </AlertDialogAction>

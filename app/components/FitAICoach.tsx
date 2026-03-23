@@ -15,15 +15,15 @@ export default function FitAICoach({ activeFocus, records, onClose }: any) {
   };
 
   return (
-    <div className="fixed bottom-10 right-10 w-80 bg-gray-900/90 border border-blue-500/30 backdrop-blur-xl p-6 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-5">
+    <div className="fixed bottom-10 right-10 w-80 bg-white/95 dark:bg-gray-900/90 border border-blue-500/30 backdrop-blur-xl p-6 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-5">
       <div className="flex justify-between items-start mb-4">
-        <h4 className="font-black text-blue-400 text-sm uppercase tracking-widest italic">Kallp: AI Analysis</h4>
-        <button onClick={onClose} className="text-gray-500 hover:text-white">✕</button>
+        <h4 className="font-black text-blue-500 dark:text-blue-400 text-sm uppercase tracking-widest italic">Kallp: AI Analysis</h4>
+        <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white">✕</button>
       </div>
-      <p className="text-gray-200 text-sm leading-relaxed mb-4">{getMessage()}</p>
+      <p className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed mb-4">{getMessage()}</p>
       <div className="flex gap-2">
-        <button className="text-[10px] bg-blue-600/20 border border-blue-500/50 px-3 py-1 rounded-full text-blue-300">Ver dieta</button>
-        <button className="text-[10px] bg-emerald-600/20 border border-emerald-500/50 px-3 py-1 rounded-full text-emerald-300">Ajustar rutina</button>
+        <button className="text-[10px] bg-blue-100 dark:bg-blue-600/20 border border-blue-300 dark:border-blue-500/50 px-3 py-1 rounded-full text-blue-700 dark:text-blue-300">Ver dieta</button>
+        <button className="text-[10px] bg-emerald-100 dark:bg-emerald-600/20 border border-emerald-300 dark:border-emerald-500/50 px-3 py-1 rounded-full text-emerald-700 dark:text-emerald-300">Ajustar rutina</button>
       </div>
     </div>
   );

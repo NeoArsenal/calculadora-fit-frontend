@@ -31,10 +31,10 @@ export default function SummaryCards({ nutrition, records, userProfile }: Summar
   const bmiValue = currentWeight > 0 ? (currentWeight / Math.pow(heightMeters, 2)) : 0;
   
   const getBmiStatus = (val: number) => {
-    if (val < 18.5) return { label: "Bajo peso", color: "text-yellow-400", border: "border-yellow-500/20" };
-    if (val < 25) return { label: "Normal", color: "text-green-400", border: "border-green-500/20" };
-    if (val < 30) return { label: "Sobrepeso", color: "text-orange-400", border: "border-orange-500/20" };
-    return { label: "Obesidad", color: "text-red-400", border: "border-red-500/20" };
+    if (val < 18.5) return { label: "Bajo peso", color: "text-yellow-500 dark:text-yellow-400", border: "border-yellow-200 dark:border-yellow-500/20" };
+    if (val < 25) return { label: "Normal", color: "text-emerald-500 dark:text-emerald-400", border: "border-emerald-200 dark:border-emerald-500/20" };
+    if (val < 30) return { label: "Sobrepeso", color: "text-orange-500 dark:text-orange-400", border: "border-orange-200 dark:border-orange-500/20" };
+    return { label: "Obesidad", color: "text-red-500 dark:text-red-400", border: "border-red-200 dark:border-red-500/20" };
   };
   const bmiStatus = getBmiStatus(bmiValue);
 
@@ -56,33 +56,33 @@ export default function SummaryCards({ nutrition, records, userProfile }: Summar
       title: "PROTEÍNA", 
       value: `${nutrition?.targetProteinGrams || 0}g`, 
       icon: Activity, 
-      color: "text-blue-400", 
-      border: "border-blue-500/20",
+      color: "text-blue-500 dark:text-blue-400", 
+      border: "border-blue-200 dark:border-blue-500/20",
       footer: "Meta diaria",
-      trend: { value: "Estable", color: "text-blue-400", isNeutral: true }
+      trend: { value: "Estable", color: "text-blue-500 dark:text-blue-400", isNeutral: true }
     },
     { 
       title: "CREATINA", 
       value: `${nutrition?.targetCreatineGrams || 0}g`, 
       icon: Beaker, 
-      color: "text-purple-400", 
-      border: "border-purple-500/20",
+      color: "text-purple-500 dark:text-purple-400", 
+      border: "border-purple-200 dark:border-purple-500/20",
       footer: "Suplemento",
-      trend: { value: "Carga", color: "text-purple-400", isNeutral: true }
+      trend: { value: "Carga", color: "text-purple-500 dark:text-purple-400", isNeutral: true }
     },
     { 
       title: "ÚLTIMO PESO", 
       value: `${currentWeight} kg`, 
       icon: Weight, 
-      color: "text-emerald-400",
-      border: "border-emerald-500/20",
+      color: "text-emerald-500 dark:text-emerald-400",
+      border: "border-emerald-200 dark:border-emerald-500/20",
       footer: "Pesaje actual",
       trend: previousWeight !== undefined ? {
         value: weightDiff === 0 ? "Sin cambios" : `${Math.abs(weightDiff).toFixed(1)} kg`,
         isUp: weightDiff > 0,
         isDown: weightDiff < 0,
         isNeutral: weightDiff === 0,
-        color: weightDiff > 0 ? "text-red-400" : weightDiff < 0 ? "text-emerald-400" : "text-gray-400"
+        color: weightDiff > 0 ? "text-red-500 dark:text-red-400" : weightDiff < 0 ? "text-emerald-500 dark:text-emerald-400" : "text-gray-500 dark:text-gray-400"
       } : null
     },
     { 
@@ -98,10 +98,10 @@ export default function SummaryCards({ nutrition, records, userProfile }: Summar
       title: "META DIARIA", 
       value: `${getTargetCalories()} kcal`, 
       icon: Flame, 
-      color: goal === 'deficit' ? "text-emerald-400" : goal === 'bulk' ? "text-blue-400" : "text-red-400",
-      border: "border-gray-500/20",
+      color: goal === 'deficit' ? "text-emerald-500 dark:text-emerald-400" : goal === 'bulk' ? "text-blue-500 dark:text-blue-400" : "text-red-500 dark:text-red-400",
+      border: "border-gray-200 dark:border-gray-500/20",
       footer: goal === 'deficit' ? "Déficit" : goal === 'bulk' ? "Volumen" : "Mantenimiento",
-      trend: { value: "Objetivo", color: "text-gray-400", isNeutral: true }
+      trend: { value: "Objetivo", color: "text-gray-500 dark:text-gray-400", isNeutral: true }
     },
   ];
 
@@ -109,10 +109,10 @@ export default function SummaryCards({ nutrition, records, userProfile }: Summar
     <div className="space-y-6 mb-10">
       <div className="flex justify-end">
         <Tabs defaultValue="maintenance" onValueChange={(v: string) => setGoal(v as any)} className="w-full max-w-md">
-          <TabsList className="grid w-full grid-cols-3 bg-gray-900/60 border border-gray-800 p-1 rounded-xl backdrop-blur-md">
-            <TabsTrigger value="deficit" className="rounded-lg text-xs transition-all data-[state=active]:bg-emerald-600">Déficit</TabsTrigger>
-            <TabsTrigger value="maintenance" className="rounded-lg text-xs transition-all data-[state=active]:bg-gray-700">Mantenimiento</TabsTrigger>
-            <TabsTrigger value="bulk" className="rounded-lg text-xs transition-all data-[state=active]:bg-blue-600">Volumen</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 p-1 rounded-xl backdrop-blur-md">
+            <TabsTrigger value="deficit" className="rounded-lg text-xs transition-all data-[state=active]:bg-emerald-500 data-[state=active]:text-white dark:data-[state=active]:bg-emerald-600">Déficit</TabsTrigger>
+            <TabsTrigger value="maintenance" className="rounded-lg text-xs transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-gray-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm">Mantenimiento</TabsTrigger>
+            <TabsTrigger value="bulk" className="rounded-lg text-xs transition-all data-[state=active]:bg-blue-500 data-[state=active]:text-white dark:data-[state=active]:bg-blue-600">Volumen</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -120,15 +120,15 @@ export default function SummaryCards({ nutrition, records, userProfile }: Summar
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Aquí solucionamos los errores de tipos en el .map */}
         {cards.map((card: any, i: number) => (
-          <Card key={i} className={`bg-gray-900/40 backdrop-blur-md border ${card.border} shadow-2xl transition-all hover:scale-105 group`}>
+          <Card key={i} className={`bg-white dark:bg-gray-900/40 backdrop-blur-md border ${card.border} shadow-xl dark:shadow-2xl transition-all hover:scale-105 group`}>
             <CardContent className="p-5">
               <div className="flex justify-between items-start mb-4">
-                <div className={`p-2 bg-gray-800/50 rounded-lg ${card.color}`}>
+                <div className={`p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg ${card.color}`}>
                   <card.icon size={18} />
                 </div>
                 
                 {card.trend && (
-                  <div className={`flex items-center text-[10px] font-bold px-2 py-1 rounded-full bg-gray-900/50 ${card.trend.color}`}>
+                  <div className={`flex items-center text-[10px] font-bold px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-900/50 ${card.trend.color}`}>
                     {card.trend.isUp && <ArrowUpRight size={12} className="mr-1" />}
                     {card.trend.isDown && <ArrowDownRight size={12} className="mr-1" />}
                     {card.trend.isNeutral && <Minus size={12} className="mr-1" />}
@@ -138,9 +138,9 @@ export default function SummaryCards({ nutrition, records, userProfile }: Summar
               </div>
               
               <div>
-                <h3 className="text-gray-500 uppercase text-[10px] font-bold tracking-[0.2em] mb-1">{card.title}</h3>
-                <p className="text-2xl font-black text-white tracking-tight">{card.value}</p>
-                <p className="text-[11px] text-gray-400 mt-2 flex items-center gap-1 italic">
+                <h3 className="text-gray-500 dark:text-gray-400 uppercase text-[10px] font-bold tracking-[0.2em] mb-1">{card.title}</h3>
+                <p className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{card.value}</p>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-1 italic">
                   • {card.footer}
                 </p>
               </div>
