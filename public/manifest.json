@@ -1,0 +1,22 @@
+{
+    "name": "Kallp: Strength & Logic",
+    "short_name": "Kallp:",
+    "description": "Dashboard de optimización física y nutrición",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#030712",
+    "theme_color": "#3b82f6",
+    "icons": [
+        {
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
