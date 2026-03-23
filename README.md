@@ -12,7 +12,7 @@ Este proyecto forma parte del ecosistema de desarrollo de **Ingeniería de Siste
 
 ---
 
-## 🚀 Logros Actuales (Fase 1: Core Nutrition & Dashboard Architecture)
+## 🚀 Logros Actuales (Fase 1 & 2: Core Nutrition, Dashboard y Training)
 
 Hemos consolidado la arquitectura base del sistema, logrando una integración fluida entre el cliente y el servidor, priorizando patrones de diseño escalables y una UX premium:
 
@@ -20,6 +20,11 @@ Hemos consolidado la arquitectura base del sistema, logrando una integración fl
 - **Escaneo en Tiempo Real:** Implementación de acceso a cámara mediante `MediaDevices API` y captura de frames mediante `Canvas`.
 - **Servicios de Comunicación:** Desarrollo de `scanMeal` y `saveMeal` utilizando `Fetch API` y manejo de `FormData`.
 - **Integración LogMeal API:** Implementación de `RestClient` en Spring Boot para consumo asíncrono de Deep Learning enfocado en reconocimiento de alimentos, con gestión de errores 429 (Too Many Requests).
+
+### 🏋️‍♂️ Training Laboratory (Routine Planner)
+- **Interfaz de Alto Rendimiento:** Desarrollo de vistas modularizadas mediante Route Groups `(routes)` y CSS Grid para una distribución óptima del planificador.
+- **Gráficos de Progresión:** Implementación de curvas de fuerza máxima utilizando `Recharts` (`AreaChart` con gradientes SVG dinámicos) para visualizar el performance del atleta.
+- **Protocolos Diarios:** Construcción de calendario interactivo para la gestión de rutinas y tarjetas visuales de ejercicios con soporte completo para Dark/Light mode.
 
 ### 🧬 Dashboard Biométrico & UX Premium
 - **Mapa de Composición 3D:** Visualizador interactivo implementado con `dynamic imports` (para evitar errores de SSR en Next.js), mostrando métricas en tiempo real.
@@ -37,7 +42,6 @@ Hemos consolidado la arquitectura base del sistema, logrando una integración fl
 
 Para alcanzar el nivel **Pro**, el plan de despliegue incluye:
 
-- [ ] **🏋️‍♂️ Módulo de Entrenamiento (Routine Planner):** Construcción del grid arquitectónico (Route Groups de Next.js) para planificador semanal y gráficos de curvas de fuerza máxima (`Recharts`).
 - [ ] **💧 Módulo de Hidratación:** Registro dinámico de consumo de agua con persistencia en DB y visualización animada del cilindro de carga.
 - [ ] **⚖️ Perfil Físico Dinámico:** Integración de la lógica de "Targets" basada en `PhysicalRecord` (Peso, Altura, Edad) para cálculos personalizados.
 - [ ] **🔐 Auth & Security:** Implementación de seguridad a nivel de endpoint para perfiles de usuario individuales (JWT/Spring Security).
