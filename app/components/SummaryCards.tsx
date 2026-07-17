@@ -11,7 +11,7 @@ interface SummaryCardsProps {
   nutrition: any;
   records: any[];
   userProfile?: {
-    height: number;
+    heightCm: number;
     age: number;
   }
 }
@@ -20,9 +20,9 @@ export default function SummaryCards({ nutrition, records, userProfile }: Summar
   const [goal, setGoal] = useState<'maintenance' | 'deficit' | 'bulk'>('maintenance');
 
   // --- LÓGICA DINÁMICA ---
-  const heightMeters = userProfile?.height || 1.79;
+  const heightCm = userProfile?.heightCm || 170;
+  const heightMeters = heightCm / 100;
   const age = userProfile?.age || 25;
-  const heightCm = heightMeters * 100;
 
   const currentWeight = records[0]?.weightKg || 0;
   const previousWeight = records[1]?.weightKg; 
@@ -117,10 +117,10 @@ export default function SummaryCards({ nutrition, records, userProfile }: Summar
         </Tabs>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="flex overflow-x-auto pb-6 -mx-4 px-4 snap-x snap-mandatory gap-4 md:grid md:grid-cols-2 lg:grid-cols-5 md:overflow-visible md:pb-0 md:px-0 md:mx-0 no-scrollbar" data-swipe-ignore="true">
         {/* Aquí solucionamos los errores de tipos en el .map */}
         {cards.map((card: any, i: number) => (
-          <Card key={i} className={`bg-white dark:bg-gray-900/40 backdrop-blur-md border ${card.border} shadow-xl dark:shadow-2xl transition-all hover:scale-105 group`}>
+          <Card key={i} className={`min-w-[85vw] md:min-w-0 snap-center shrink-0 bg-white dark:bg-gray-900/40 backdrop-blur-md border ${card.border} shadow-xl dark:shadow-2xl transition-all hover:scale-105 group`}>
             <CardContent className="p-5">
               <div className="flex justify-between items-start mb-4">
                 <div className={`p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg ${card.color}`}>

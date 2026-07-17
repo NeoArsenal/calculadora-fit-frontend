@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { User, Target, Loader2 } from "lucide-react"; // ⚡️ Importamos Loader2 para el spinner animado
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
+import { useApp } from "@/app/context/AppContext";
 
 // 1. Definimos el "contrato" para que acepte la función
 interface BodyCompositionMapProps {
@@ -19,10 +20,15 @@ const BodyScanner3D = dynamic(() => import("./BodyScanner3D"), {
 });
 
 export default function BodyCompositionMap({ records, onSelectPart, onRefresh }: BodyCompositionMapProps) {
+  const { userProfile } = useApp();
+
   // Datos dinámicos desde el backend
-  const currentRecord = records[0];
+  const currentRecord = records?.[0];
   const weight = currentRecord?.weightKg || 86.6;
   const waist = currentRecord?.waistCircumferenceCm || 90;
+  const bodyFat = currentRecord?.bodyFatPercentage || 15.5;
+  const height = userProfile?.heightCm || 180;
+  const bmi = (weight / Math.pow(height / 100, 2)).toFixed(1);
 
   // ⚡️ SOLUCIÓN ERROR 1: Estado declarado correctamente
   const [isScanning, setIsScanning] = useState(false);
@@ -75,25 +81,62 @@ export default function BodyCompositionMap({ records, onSelectPart, onRefresh }:
         </div>
 
         {/* --- EL MODELO SIMULADO --- */}
-        <div className="relative w-full h-[480px] lg:h-[500px] 
-          bg-gradient-to-br from-[#0a0f1c] via-[#0d1b2a] to-[#050505]
-          rounded-xl border border-gray-200 dark:border-gray-800 p-4 flex items-center justify-center overflow-hidden shadow-inner">
+        <div className="relative w-full h-[480px] lg:h-[500px] rounded-3xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10 group">
+          
+          {/* Fondo Espacial/Cyberpunk con Grid */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a] via-[#020617] to-[#000000] z-0" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)] z-0" />
 
           {/* 🔥 CANVAS 3D */}
-          <BodyScanner3D records={records} onSelectPart={onSelectPart} />
+          <div className="relative z-10 w-full h-full">
+            <BodyScanner3D records={records} onSelectPart={onSelectPart} />
+          </div>
 
-          {/* UI encima */}
-          <div className="absolute top-10 right-10 text-right z-10">
-            <p className="text-xs font-bold text-gray-400">PESO ACTUAL</p>
-            <p className="text-3xl font-black text-white">
-              {weight} <span className="text-sm text-gray-500">kg</span>
+          {/* Efectos de escaneo en los bordes */}
+          <div className="absolute inset-0 pointer-events-none border border-blue-500/20 rounded-3xl z-20" />
+          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 z-20 pointer-events-none" />
+
+          {/* UI encima: PESO ACTUAL (Glassmorphism) */}
+          <div className="absolute top-2 md:top-6 right-2 md:right-6 z-30 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(59,130,246,0.15)] flex flex-col items-end transform transition-transform hover:scale-105">
+            <div className="flex items-center gap-1 md:gap-2 mb-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-blue-300 uppercase">Peso Actual</p>
+            </div>
+            <p className="text-xl md:text-4xl font-black italic text-white tracking-tighter">
+              {weight} <span className="text-xs md:text-sm font-medium text-gray-400">kg</span>
             </p>
           </div>
 
-          <div className="absolute top-1/2 left-5 -translate-y-1/2 z-10">
-            <p className="text-xs font-bold text-emerald-500">CINTURA</p>
-            <p className="text-3xl font-black text-emerald-400">
-              {waist} <span className="text-sm text-gray-500">cm</span>
+          {/* UI encima: GRASA CORPORAL (Glassmorphism) */}
+          <div className="absolute top-2 md:top-6 left-2 md:left-6 z-30 bg-white/5 backdrop-blur-md border border-orange-500/20 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(249,115,22,0.15)] flex flex-col items-start transform transition-transform hover:scale-105">
+            <div className="flex items-center gap-1 md:gap-2 mb-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-orange-400 uppercase">Grasa Corporal</p>
+            </div>
+            <p className="text-xl md:text-4xl font-black italic text-white tracking-tighter">
+              {bodyFat} <span className="text-xs md:text-sm font-medium text-gray-400">%</span>
+            </p>
+          </div>
+
+          {/* UI encima: CINTURA (Glassmorphism) */}
+          <div className="absolute bottom-2 md:bottom-10 left-2 md:left-6 z-30 bg-white/5 backdrop-blur-md border border-emerald-500/20 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(16,185,129,0.15)] flex flex-col items-start transform transition-transform hover:scale-105">
+            <div className="flex items-center gap-1 md:gap-2 mb-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-emerald-400 uppercase">Cintura</p>
+            </div>
+            <p className="text-xl md:text-4xl font-black italic text-white tracking-tighter">
+              {waist} <span className="text-xs md:text-sm font-medium text-gray-400">cm</span>
+            </p>
+          </div>
+
+          {/* UI encima: IMC (Glassmorphism) */}
+          <div className="absolute bottom-2 md:bottom-10 right-2 md:right-6 z-30 bg-white/5 backdrop-blur-md border border-purple-500/20 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(168,85,247,0.15)] flex flex-col items-end transform transition-transform hover:scale-105">
+            <div className="flex items-center gap-1 md:gap-2 mb-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-purple-400 uppercase">Índice IMC</p>
+            </div>
+            <p className="text-xl md:text-4xl font-black italic text-white tracking-tighter">
+              {bmi} <span className="text-xs md:text-sm font-medium text-gray-400">pts</span>
             </p>
           </div>
         </div>
@@ -102,19 +145,19 @@ export default function BodyCompositionMap({ records, onSelectPart, onRefresh }:
         <button
           onClick={handleScan}
           disabled={isScanning}
-          className={`w-full mt-6 font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all ${isScanning
-              ? 'bg-blue-800/50 text-blue-300 cursor-not-allowed' // Look cuando está cargando
-              : 'bg-blue-600 hover:bg-blue-700 text-white' // Look normal
+          className={`w-full mt-6 font-black uppercase tracking-widest text-[11px] py-4 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-lg active:scale-95 ${isScanning
+              ? 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-muted-foreground cursor-not-allowed shadow-none'
+              : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/25 border border-blue-500/50'
             }`}
         >
           {isScanning ? (
             <>
-              <Loader2 size={18} className="animate-spin" />
+              <Loader2 size={16} className="animate-spin" />
               Sincronizando Biometría...
             </>
           ) : (
             <>
-              <Target size={18} />
+              <Target size={16} />
               Refrescar Escaneo Biométrico
             </>
           )}

@@ -11,6 +11,7 @@ export interface PhysicalRecord {
 
 // Recibimos el userId como parámetro para que no esté pegado al código
 export function useDashboard(userId: number | null) {
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [records, setRecords] = useState<PhysicalRecord[]>([]);
   const [nutrition, setNutrition] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -23,20 +24,22 @@ export function useDashboard(userId: number | null) {
     setError(null);
 
     try {
-      // 🛡️ EL PARCHE: Agregamos .catch() a cada petición por separado.
-      // Si el backend lanza 400 o 404 porque la BD está vacía, lo atrapamos aquí
-      // y devolvemos valores por defecto ([], null) sin romper la aplicación.
-      const [recordsData, nutritionData] = await Promise.all([
+      const [profileData, recordsData, nutritionData] = await Promise.all([
+        api.getUserProfile(userId).catch((err) => {
+          console.warn("Aviso: No se pudo cargar el perfil.", err);
+          return null;
+        }),
         api.getRecords(userId).catch((err) => {
-          console.warn("Aviso: No se pudo cargar el historial (posiblemente base vacía).", err);
-          return []; // Devuelve lista vacía para activar tu Escudo Empty State
+          console.warn("Aviso: No se pudo cargar el historial.", err);
+          return []; 
         }),
         api.getNutrition(userId).catch((err) => {
-          console.warn("Aviso: No se pudo calcular la nutrición (faltan datos del usuario).", err);
-          return null; // Devuelve null para no romper el Dashboard
+          console.warn("Aviso: No se pudo calcular la nutrición.", err);
+          return null; 
         })
       ]);
       
+      setUserProfile(profileData);
       setRecords(recordsData);
       setNutrition(nutritionData);
 
@@ -54,5 +57,5 @@ export function useDashboard(userId: number | null) {
     loadData();
   }, [loadData]);
 
-  return { records, nutrition, loading, error, loadData };
+  return { userProfile, records, nutrition, loading, error, loadData };
 }

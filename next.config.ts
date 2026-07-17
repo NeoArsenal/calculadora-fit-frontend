@@ -19,6 +19,7 @@ const withPWA = withPWAInit({
  */
 const nextConfig: NextConfig = {
   /* Aquí puedes poner tus opciones normales como imágenes o redirecciones */
+  turbopack: {},
 };
 
 /** * 3. Exportamos la combinación de ambos 

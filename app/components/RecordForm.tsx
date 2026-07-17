@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from 'sonner';
+import { useApp } from '@/app/context/AppContext';
 
 export default function RecordForm({ onSuccess }: { onSuccess: () => void }) {
+  const { CURRENT_USER_ID } = useApp();
   const [weight, setWeight] = useState("");
   const [waist, setWaist] = useState("");
   const [errors, setErrors] = useState<any>({});
-  // NUEVO ESTADO PARA UX PROFESIONAL
   const [isSubmitting, setIsSubmitting] = useState(false); 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,9 +22,8 @@ export default function RecordForm({ onSuccess }: { onSuccess: () => void }) {
     setErrors({});
     setIsSubmitting(true);
 
-    // 1. Encapsulamos la llamada a Spring Boot en una promesa
     const savePromise = api.createRecord({
-      userProfile: { id: 1 }, 
+      userProfile: { id: CURRENT_USER_ID }, 
       weightKg: parseFloat(weight),
       waistCircumferenceCm: parseFloat(waist),
     });

@@ -13,6 +13,7 @@ interface Props {
 
 export default function StrengthProgression({ sessions }: Props) {
   const [selectedExercise, setSelectedExercise] = useState("Bench Press");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const exerciseOptions = useMemo(() => {
     const names = new Set<string>();
@@ -40,29 +41,51 @@ export default function StrengthProgression({ sessions }: Props) {
   const progressPercent = firstWeight > 0 ? ((lastWeight - firstWeight) / firstWeight * 100).toFixed(1) : "0";
 
   return (
-    <div className="bg-[#0a0a0b]/60 border border-white/5 rounded-[2rem] p-8 backdrop-blur-xl shadow-2xl">
+    <div className="bg-white dark:bg-[#0f0f11] shadow-2xl shadow-gray-200/50 dark:shadow-none border border-gray-200 dark:border-white/5 rounded-[2.5rem] p-8 transition-colors duration-300">
       
       {/* HEADER */}
       <div className="flex justify-between items-start mb-10">
         <div className="space-y-1">
-          <h2 className="text-white text-2xl font-black uppercase tracking-tighter italic">
+          <h2 className="text-gray-900 dark:text-white text-2xl font-black uppercase tracking-tighter italic transition-colors mb-2">
             Strength Progression
           </h2>
-          <div className="flex items-center gap-2 group cursor-pointer bg-white/5 w-fit px-3 py-1 rounded-full border border-white/10 hover:bg-white/10 transition-all">
-            <select 
-              value={selectedExercise}
-              onChange={(e) => setSelectedExercise(e.target.value)}
-              className="bg-transparent text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 outline-none appearance-none cursor-pointer"
+          
+          <div className="relative">
+            <div 
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center gap-2 group cursor-pointer bg-gray-50 dark:bg-white/5 w-fit px-4 py-2 rounded-full border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 transition-all"
             >
-              {exerciseOptions.map(name => <option key={name} value={name} className="bg-[#0a0a0b]">{name}</option>)}
-            </select>
-            <ChevronDown size={12} className="text-blue-400" />
+              <span className="bg-transparent text-[10px] font-black uppercase tracking-[0.2em] text-blue-500 dark:text-blue-400 select-none">
+                {selectedExercise}
+              </span>
+              <ChevronDown size={14} className={`text-blue-500 dark:text-blue-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+            </div>
+
+            {isDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
+                <div className="absolute top-full left-0 mt-2 w-max min-w-[240px] max-h-[250px] overflow-y-auto bg-white dark:bg-[#0a0a0b] border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl z-50 py-2 custom-scrollbar">
+                  {exerciseOptions.map(name => (
+                    <div 
+                      key={name}
+                      onClick={() => {
+                        setSelectedExercise(name);
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`px-4 py-3 text-[10px] font-black uppercase tracking-[0.2em] cursor-pointer transition-colors ${selectedExercise === name ? 'bg-blue-500/10 text-blue-500 border-l-2 border-blue-500' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white border-l-2 border-transparent'}`}
+                    >
+                      {name}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
         <div className="text-right">
           <div className="flex items-center gap-2 justify-end">
-             <span className="text-3xl font-black italic text-white tracking-tighter">{lastWeight}kg</span>
+             <span className="text-3xl font-black italic text-gray-900 dark:text-white tracking-tighter transition-colors">{lastWeight}kg</span>
           </div>
           <p className="text-[10px] font-black uppercase tracking-widest text-green-400 flex items-center justify-end gap-1">
             <TrendingUp size={12} /> +{progressPercent}% <span className="text-muted-foreground ml-1">vs start</span>

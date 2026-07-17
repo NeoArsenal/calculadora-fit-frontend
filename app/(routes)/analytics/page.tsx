@@ -1,10 +1,65 @@
 "use client";
 
-import React from "react";
-import { Download } from "lucide-react";
-import WorkoutHeatmap from "./components/WorkoutHeatmap"; // ⚡️ IMPORTACIÓN
+import React, { useState, useEffect } from "react";
+import { Download, Trophy, Flame, Dumbbell, Target, Settings } from "lucide-react";
+import WorkoutHeatmap from "./components/WorkoutHeatmap"; 
 import BodyCompositionChart from "./components/BodyCompositionChart";
+import SupplementAdherence from "./components/SupplementAdherence";
+import GoalConfigModal from "./components/GoalConfigModal";
+import { useApp } from "@/app/context/AppContext";
+import { calculateAge, calculateTDEE, calculateGoalProjection } from "@/app/utils/calculations";
+import { updateUserProfile } from "@/services/api";
+
 export default function AnalyticsPage() {
+  const { analytics: globalAnalytics, loading, userProfile, records, refreshEcosystem, CURRENT_USER_ID, trainingSessions } = useApp();
+  const currentStreak = globalAnalytics?.currentStreak;
+  const totalVolume = globalAnalytics?.totalVolume;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [bodyChartRange, setBodyChartRange] = useState("6M");
+
+  // -- GOAL PROJECTION LOGIC --
+  const currentWeight = records?.[0]?.weightKg || 0;
+  const targetWeight = userProfile?.targetWeightKg || 0;
+  const targetCalories = userProfile?.targetCalories || 0;
+  
+  let projection = { isPossible: false, message: "Configura tu meta en el perfil", projectedDate: null as Date | null, weeksRemaining: 0 };
+  
+  if (userProfile && currentWeight > 0 && targetWeight > 0 && targetCalories > 0) {
+    const age = calculateAge(userProfile.dateOfBirth);
+    const tdee = calculateTDEE(currentWeight, userProfile.heightCm || 170, age, userProfile.gender || "M", userProfile.activityLevel || "sedentary");
+    projection = calculateGoalProjection(currentWeight, targetWeight, tdee, targetCalories);
+  }
+
+  const projectedDateStr = projection.projectedDate 
+    ? projection.projectedDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }).toUpperCase().replace('.', '')
+    : "-- ---";
+    
+  // Calculate progress percentage
+  let progressPercent = 0;
+  const startWeight = records?.[records.length - 1]?.weightKg || currentWeight; // Simplification
+  if (startWeight !== targetWeight && targetWeight > 0) {
+    const totalDiff = Math.abs(startWeight - targetWeight);
+    const currentDiff = Math.abs(currentWeight - targetWeight);
+    progressPercent = totalDiff > 0 ? Math.max(0, Math.min(100, ((totalDiff - currentDiff) / totalDiff) * 100)) : 0;
+  }
+
+  // -- BEST LIFT LOGIC --
+  let bestLiftWeight = 0;
+  let bestLiftName = "SIN DATOS";
+
+  if (trainingSessions && trainingSessions.length > 0) {
+    trainingSessions.forEach((session: any) => {
+      if (session.exerciseLogs) {
+        session.exerciseLogs.forEach((log: any) => {
+          if (log.weightUsed > bestLiftWeight) {
+            bestLiftWeight = log.weightUsed;
+            bestLiftName = log.exerciseName;
+          }
+        });
+      }
+    });
+  }
+
   return (
     <div className="w-full animate-in fade-in duration-700 space-y-8">
       
@@ -12,7 +67,7 @@ export default function AnalyticsPage() {
       <header className="flex justify-between items-end border-b border-border pb-6">
         <div>
           <p className="text-[10px] text-blue-500 font-bold tracking-[0.2em] uppercase mb-1">
-            Performance Insights
+            Análisis de Rendimiento
           </p>
           <h1 className="text-4xl font-black tracking-tighter text-foreground">
             Analytics<span className="text-blue-500">:</span>
@@ -21,9 +76,9 @@ export default function AnalyticsPage() {
         
         <div className="hidden md:flex items-center gap-4">
           <button className="flex items-center gap-2 px-4 py-2 border border-border bg-card hover:bg-muted text-foreground text-xs font-bold rounded-md transition-colors uppercase tracking-wider">
-            <Download size={14} /> Export Data
+            <Download size={14} /> Exportar Datos
           </button>
-          {/* Avatar del usuario (Puedes reemplazarlo por el componente de Avatar de Shadcn) */}
+          {/* Avatar del usuario */}
           <div className="w-10 h-10 rounded-md bg-gray-800 border border-gray-700 overflow-hidden">
             <img src="/api/placeholder/40/40" alt="Alonso" className="w-full h-full object-cover" />
           </div>
@@ -37,114 +92,180 @@ export default function AnalyticsPage() {
         <section className="xl:col-span-8 bg-card border border-border rounded-xl p-6 shadow-sm min-h-[350px] flex flex-col">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h2 className="text-lg font-bold text-foreground">Body Composition Trends</h2>
-              <p className="text-xs text-muted-foreground uppercase tracking-widest mt-1">6-Month Delta Comparison</p>
+              <h2 className="text-lg font-bold text-foreground">Tendencia Corporal</h2>
+              <div className="flex gap-2 mt-2">
+                {['1W', '1M', '3M', '6M'].map(r => (
+                  <button 
+                    key={r}
+                    onClick={() => setBodyChartRange(r)}
+                    className={`text-[10px] font-bold px-2 py-1 rounded transition-colors ${bodyChartRange === r ? 'bg-blue-500 text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                  >
+                    {r === '1W' ? '1 SEM' : r === '1M' ? '1 MES' : r === '3M' ? '3 MES' : '6 MES'}
+                  </button>
+                ))}
+              </div>
             </div>
             {/* Leyenda manual */}
             <div className="flex gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-              <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Weight</span>
-              <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-pink-400"></div> Fat %</span>
-              <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-indigo-400"></div> Muscle</span>
+              <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Peso</span>
+              <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-pink-400"></div> Grasa %</span>
+              <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-indigo-400"></div> Músculo</span>
             </div>
           </div>
           
-          {/* Contenedor del gráfico sin bordes raros y con altura fija para que Recharts lo llene */}
           <div className="flex-1 w-full h-full min-h-[250px] mt-4">
-            <BodyCompositionChart />
+            <BodyCompositionChart range={bodyChartRange} />
           </div>
         </section>
 
         {/* PROYECCIÓN DE META (4/12) - Estilo Tarjeta Azul Fuerte */}
-        <section className="xl:col-span-4 bg-blue-600 text-white rounded-xl p-6 shadow-xl shadow-blue-500/20 flex flex-col justify-between min-h-[350px] relative overflow-hidden">
-          {/* Elemento decorativo de fondo */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+        <section className="xl:col-span-4 bg-gradient-to-br from-blue-600 to-blue-800 text-white rounded-2xl p-6 shadow-2xl shadow-blue-500/20 flex flex-col justify-between min-h-[350px] relative overflow-hidden group">
+          {/* Elemento decorativo de fondo animado */}
+          <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10 animate-[pulse_4s_ease-in-out_infinite]"></div>
           
-          <div className="relative z-10">
-            <h2 className="text-xl font-bold mb-2">Goal Projection:</h2>
-            <p className="text-sm text-blue-100/80 leading-relaxed">
-              Kinetic velocity based on current deficit & training.
-            </p>
+          {/* Textura de puntitos sutil (noise) */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px] opacity-20 z-0 mix-blend-overlay pointer-events-none"></div>
+
+          <div className="relative z-10 flex justify-between items-start">
+            <div>
+              <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
+                <Target size={20} className="text-blue-200" />
+                Proyección de Meta
+              </h2>
+              <p className="text-sm text-blue-100/80 leading-relaxed">
+                Velocidad calculada según tu déficit calórico y TDEE.
+              </p>
+            </div>
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors backdrop-blur-sm border border-white/10"
+              title="Configurar Meta"
+            >
+              <Settings size={16} className="text-white" />
+            </button>
           </div>
 
           <div className="relative z-10 space-y-1">
-            <p className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Target Date</p>
-            <h3 className="text-5xl font-black tracking-tighter">12 OCT</h3>
-            <p className="text-xs font-medium text-blue-200 flex items-center gap-1 mt-2">
-              <span className="text-white">↗</span> 87% Accuracy Confidence
+            <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">Fecha Objetivo</p>
+            <h3 className="text-5xl font-black tracking-tighter drop-shadow-md">
+              {targetWeight > 0 ? projectedDateStr : "SIN META"}
+            </h3>
+            <p className={`text-xs font-medium flex items-center gap-1 mt-2 bg-black/20 w-fit px-2 py-1 rounded-full border border-white/10 backdrop-blur-sm shadow-sm ${projection.isPossible ? 'text-emerald-300' : 'text-amber-300'}`}>
+              <span>{projection.isPossible ? '↗' : '⚠️'}</span> {projection.message}
             </p>
           </div>
 
           <div className="relative z-10 mt-8">
-            <div className="w-full bg-blue-800/50 rounded-full h-1.5 mb-2 overflow-hidden">
-              <div className="bg-white h-1.5 rounded-full" style={{ width: '64%' }}></div>
+            <div className="w-full bg-blue-900/50 rounded-full h-2 mb-2 overflow-hidden shadow-inner border border-blue-400/20">
+              <div className="bg-gradient-to-r from-blue-400 to-white h-2 rounded-full relative" style={{ width: `${progressPercent}%` }}>
+                {/* Brillo dinámico en la barra de progreso */}
+                {progressPercent > 0 && <div className="absolute inset-0 bg-white/40 blur-sm rounded-full"></div>}
+              </div>
             </div>
             <p className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">
-              Current Progress: 6.4kg / 10kg
+              {targetWeight > 0 
+                ? `Progreso Actual: ${currentWeight}kg / ${targetWeight}kg`
+                : "Añade targetWeightKg en backend"}
             </p>
           </div>
         </section>
       </div>
 
-      {/* SECCIÓN INTERMEDIA: 3 Tarjetas KPI */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* SECCIÓN INTERMEDIA: 4 Tarjetas KPI */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
         {/* KPI 1: Best Lift */}
-        <div className="bg-card border-y border-r border-border border-l-4 border-l-pink-500 rounded-xl p-5 shadow-sm">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">Best Lift</p>
-          <div className="flex items-end gap-1">
-            <span className="text-3xl font-black text-foreground">145</span>
+        <div className="bg-card dark:bg-[#111827] border border-border/50 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-pink-500/50 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-pink-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-pink-500/20 transition-all duration-500"></div>
+          
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Mejor Levantamiento</p>
+            <div className="w-8 h-8 rounded-full bg-pink-500/10 flex items-center justify-center border border-pink-500/20 shadow-[0_0_10px_rgba(236,72,153,0.2)]">
+              <Trophy size={14} className="text-pink-500" />
+            </div>
+          </div>
+          
+          <div className="flex items-end gap-1 relative z-10">
+            <span className="text-3xl font-black text-foreground">
+              {loading ? "..." : bestLiftWeight}
+            </span>
             <span className="text-xs text-muted-foreground font-bold mb-1">KG</span>
           </div>
-          <p className="text-xs text-pink-500 font-medium mt-1">DEADLIFT <br/><span className="text-muted-foreground">(CONVENTIONAL)</span></p>
+          <p className="text-xs text-pink-500 font-medium mt-1 relative z-10 uppercase truncate">{bestLiftName}</p>
         </div>
 
-        {/* KPI 2: Current Streak (¡Aquí va la data de tu backend!) */}
-        <div className="bg-card border-y border-r border-border border-l-4 border-l-blue-500 rounded-xl p-5 shadow-sm">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">Current Streak</p>
-          <div className="flex items-end gap-1">
-            <span className="text-3xl font-black text-foreground">14</span>
-            <span className="text-xs text-muted-foreground font-bold mb-1">DAYS</span>
+        {/* ⚡️ KPI 2: Current Streak (¡CONECTADO AL BACKEND!) */}
+        <div className="bg-card dark:bg-[#111827] border border-border/50 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-blue-500/50 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-blue-500/20 transition-all duration-500"></div>
+          
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Racha Actual</p>
+            <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shadow-[0_0_10px_rgba(59,130,246,0.2)]">
+              <Flame size={14} className="text-blue-500" />
+            </div>
           </div>
-          <p className="text-xs text-blue-500 font-medium mt-1 uppercase">Active Consistency</p>
+          
+          <div className="flex items-end gap-1 relative z-10">
+            {/* ⚡️ Mostramos '...' mientras carga, y luego la racha real */}
+            <span className="text-3xl font-black text-foreground">
+              {currentStreak !== null ? currentStreak : "..."}
+            </span>
+            <span className="text-xs text-muted-foreground font-bold mb-1">DÍAS</span>
+          </div>
+          <p className="text-xs text-blue-500 font-medium mt-1 uppercase relative z-10">Consistencia Activa</p>
         </div>
 
         {/* KPI 3: Total Volume */}
-        <div className="bg-card border-y border-r border-border border-l-4 border-l-indigo-400 rounded-xl p-5 shadow-sm relative overflow-hidden">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">Total Volume</p>
+        <div className="bg-card dark:bg-[#111827] border border-border/50 rounded-2xl p-5 shadow-lg relative overflow-hidden group hover:border-indigo-500/50 transition-all duration-300">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-indigo-500/20 transition-all duration-500"></div>
+          
+          <div className="flex items-center justify-between mb-4 relative z-10">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Volumen Total</p>
+            <div className="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-[0_0_10px_rgba(99,102,241,0.2)]">
+              <Dumbbell size={14} className="text-indigo-500" />
+            </div>
+          </div>
+          
           <div className="flex items-end gap-1 relative z-10">
-            <span className="text-3xl font-black text-foreground">28,450</span>
+            {/* ⚡️ Mostramos '...' mientras carga, y luego el volumen real formateado (, para miles) */}
+            <span className="text-3xl font-black text-foreground">
+              {totalVolume !== null ? totalVolume.toLocaleString('en-US') : "..."}
+            </span>
             <span className="text-xs text-muted-foreground font-bold mb-1">KG</span>
           </div>
-          <p className="text-xs text-indigo-400 font-medium mt-1 uppercase relative z-10">Total Lifted Last 30 Days</p>
+          <p className="text-xs text-indigo-400 font-medium mt-1 uppercase relative z-10">Levantado Últimos 30 Días</p>
           
           {/* Mini gráfico de barras decorativo */}
-          <div className="absolute right-4 bottom-4 flex items-end gap-1 opacity-50">
-            <div className="w-1.5 h-3 bg-indigo-500 rounded-t-sm"></div>
-            <div className="w-1.5 h-5 bg-indigo-500 rounded-t-sm"></div>
-            <div className="w-1.5 h-4 bg-indigo-500 rounded-t-sm"></div>
-            <div className="w-1.5 h-8 bg-indigo-500 rounded-t-sm"></div>
-            <div className="w-1.5 h-6 bg-indigo-500 rounded-t-sm"></div>
-            <div className="w-1.5 h-10 bg-indigo-400 rounded-t-sm"></div>
+          <div className="absolute right-4 bottom-4 flex items-end gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+            <div className="w-1.5 h-3 bg-indigo-500 rounded-t-sm animate-pulse" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-1.5 h-5 bg-indigo-500 rounded-t-sm animate-pulse" style={{ animationDelay: '100ms' }}></div>
+            <div className="w-1.5 h-4 bg-indigo-500 rounded-t-sm animate-pulse" style={{ animationDelay: '200ms' }}></div>
+            <div className="w-1.5 h-8 bg-indigo-500 rounded-t-sm animate-pulse" style={{ animationDelay: '300ms' }}></div>
+            <div className="w-1.5 h-6 bg-indigo-500 rounded-t-sm animate-pulse" style={{ animationDelay: '400ms' }}></div>
+            <div className="w-1.5 h-10 bg-indigo-400 rounded-t-sm animate-pulse" style={{ animationDelay: '500ms' }}></div>
           </div>
         </div>
 
+        {/* KPI 4: Supplement Adherence */}
+        <SupplementAdherence />
+        
       </div>
 
       {/* SECCIÓN INFERIOR: Workout Consistency (Heatmap) */}
-      <section className="bg-card border border-border rounded-xl p-6 shadow-sm">
+      <section className="bg-card dark:bg-[#111827] border border-border/50 rounded-2xl p-6 shadow-lg">
         <div className="flex justify-between items-start mb-8">
           <div>
-            <h2 className="text-lg font-bold text-foreground">Workout Consistency</h2>
-            <p className="text-xs text-muted-foreground uppercase tracking-widest mt-1">Session Frequency Per Week</p>
+            <h2 className="text-lg font-bold text-foreground">Consistencia de Entrenamiento</h2>
+            <p className="text-xs text-muted-foreground uppercase tracking-widest mt-1">Frecuencia de Sesiones por Semana</p>
           </div>
           <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
-            Intensity: 
+            Intensidad: 
             <div className="flex gap-1 ml-2">
-              <div className="w-3 h-3 rounded-sm bg-gray-800"></div>
-              <div className="w-3 h-3 rounded-sm bg-blue-900/50"></div>
-              <div className="w-3 h-3 rounded-sm bg-blue-600/60"></div>
-              <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
-              <div className="w-3 h-3 rounded-sm bg-blue-400"></div>
+              <div className="w-[14px] h-[14px] rounded-[4px] bg-gray-200 dark:bg-white/5"></div>
+              <div className="w-[14px] h-[14px] rounded-[4px] bg-blue-500/20 shadow-[inset_0_0_2px_rgba(59,130,246,0.3)]"></div>
+              <div className="w-[14px] h-[14px] rounded-[4px] bg-blue-500/50 shadow-[0_0_5px_rgba(59,130,246,0.4)]"></div>
+              <div className="w-[14px] h-[14px] rounded-[4px] bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]"></div>
+              <div className="w-[14px] h-[14px] rounded-[4px] bg-white shadow-[0_0_12px_rgba(255,255,255,0.8)]"></div>
             </div>
           </div>
         </div>
@@ -154,6 +275,19 @@ export default function AnalyticsPage() {
         </div>
       </section>
 
+      <GoalConfigModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        initialWeight={targetWeight}
+        initialCalories={targetCalories}
+        onSave={async (weight, calories) => {
+          await updateUserProfile(CURRENT_USER_ID, {
+            targetWeightKg: weight,
+            targetCalories: calories
+          });
+          await refreshEcosystem();
+        }}
+      />
     </div>
   );
 }

@@ -1,37 +1,57 @@
 "use client";
 
 import React, { useMemo } from "react";
-
-// ⚡️ Función para generar datos simulados de 6 meses (24 semanas aprox)
-const generateMockData = () => {
-  const data = [];
-  const weeks = 26; // 6 meses
-  const daysInWeek = 7;
-
-  for (let i = 0; i < weeks * daysInWeek; i++) {
-    // Simulamos que el usuario entrena el 60% de los días
-    const isTrainingDay = Math.random() > 0.4;
-    // Si entrena, le damos una intensidad del 1 al 4
-    const intensity = isTrainingDay ? Math.floor(Math.random() * 4) + 1 : 0;
-    data.push({ id: i, intensity });
-  }
-  return data;
-};
+import { useApp } from "@/app/context/AppContext";
 
 export default function WorkoutHeatmap() {
-  // Memorizamos los datos para que no cambien en cada renderizado de React
-  const days = useMemo(() => generateMockData(), []);
+  const { trainingSessions } = useApp();
+
+  const days = useMemo(() => {
+    const data = [];
+    const weeks = 26; // 6 meses
+    const daysInWeek = 7;
+    const totalDays = weeks * daysInWeek;
+    
+    const trainingDates = new Map();
+    if (trainingSessions) {
+      trainingSessions.forEach((session: any) => {
+        if (session.date) {
+           // We might need to split T or space if it's ISO, but Date() handles it
+           const dateStr = new Date(session.date).toDateString();
+           trainingDates.set(dateStr, (trainingDates.get(dateStr) || 0) + 1);
+        }
+      });
+    }
+
+    const today = new Date();
+    // Start totalDays ago
+    for (let i = totalDays - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toDateString();
+      const sessionsCount = trainingDates.get(dateStr) || 0;
+      
+      let intensity = 0;
+      if (sessionsCount > 0) {
+          // Intensidad basada en si hay sesiones (1 sesión = 2, 2 = 3, 3+ = 4)
+          intensity = Math.min(4, sessionsCount + 1);
+      }
+      
+      data.push({ id: i, intensity, date: d });
+    }
+    return data;
+  }, [trainingSessions]);
   
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
 
   // ⚡️ Diccionario de colores basado en tu mockup (Soporta Dark/Light Mode)
   const getColor = (intensity: number) => {
     switch (intensity) {
-      case 1: return "bg-blue-200 dark:bg-blue-900/50";
-      case 2: return "bg-blue-300 dark:bg-blue-600/60";
-      case 3: return "bg-blue-500";
-      case 4: return "bg-blue-400";
-      default: return "bg-gray-100 dark:bg-gray-800/50"; // Día de descanso (Vacío)
+      case 1: return "bg-blue-500/20 shadow-[inset_0_0_2px_rgba(59,130,246,0.3)]";
+      case 2: return "bg-blue-500/50 shadow-[0_0_5px_rgba(59,130,246,0.4)]";
+      case 3: return "bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]";
+      case 4: return "bg-white shadow-[0_0_12px_rgba(255,255,255,0.8)]";
+      default: return "bg-gray-200 dark:bg-white/5"; // Día de descanso (Vacío)
     }
   };
 
@@ -59,12 +79,12 @@ return (
           </div>
 
           {/* ⚡️ EL GRID MÁGICO */}
-          {/* FIX 2: gap-1 para más aire, w-[16px] h-[16px] para que sean más grandes */}
-          <div className="grid grid-rows-7 grid-flow-col gap-1">
+          {/* FIX 2: gap-[3px] para más aire, w-[14px] h-[14px] para que sean más grandes */}
+          <div className="grid grid-rows-7 grid-flow-col gap-[3px]">
             {days.map((day) => (
               <div
                 key={day.id}
-                className={`w-[16px] h-[16px] rounded-[3px] transition-all duration-300 hover:ring-2 hover:ring-ring cursor-pointer hover:scale-110 ${getColor(day.intensity)}`}
+                className={`w-[14px] h-[14px] rounded-[4px] transition-all duration-300 hover:ring-1 hover:ring-white cursor-pointer hover:scale-125 z-0 hover:z-10 ${getColor(day.intensity)}`}
                 title={`Nivel de intensidad: ${day.intensity}`}
               ></div>
             ))}

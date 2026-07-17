@@ -99,7 +99,7 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
               onClick={startCamera}
               className="bg-blue-600 hover:bg-blue-500 text-white px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.3em] transition-all active:scale-95"
             >
-              Initialize Vision_
+              Inicializar Visión_
             </button>
           </div>
         ) : (
@@ -122,7 +122,7 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
             {isProcessing && (
               <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-4 z-30">
                 <Loader2 className="animate-spin text-blue-500" size={48} />
-                <p className="text-[10px] font-black text-white uppercase tracking-widest text-center px-4">Analyzing Nutrients with Kallp IA...</p>
+                <p className="text-[10px] font-black text-white uppercase tracking-widest text-center px-4">Analizando Nutrientes con Kallp IA...</p>
               </div>
             )}
           </>
@@ -149,7 +149,7 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
         )}
         <div className="text-center">
           <h2 className="text-white font-black italic uppercase tracking-tighter text-3xl">Kallp AI Vision_</h2>
-          <p className="text-blue-500 font-bold uppercase text-[9px] tracking-[0.5em] mt-1 italic">Artificial Intelligence for Elite Athletes</p>
+          <p className="text-blue-500 font-bold uppercase text-[9px] tracking-[0.5em] mt-1 italic">Inteligencia Artificial para Atletas Élite</p>
         </div>
       </div>
 

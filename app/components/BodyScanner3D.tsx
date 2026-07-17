@@ -1,8 +1,8 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Center, OrbitControls, useGLTF } from "@react-three/drei";
-import { EffectComposer, Bloom } from "@react-three/postprocessing";
+import { OrbitControls, useGLTF, Center } from "@react-three/drei";
+// Postprocessing removed for performance
 import { useRef, useMemo } from "react";
 import Hotspot from "./Hotspot";
 import * as THREE from "three";
@@ -43,22 +43,14 @@ function HologramBody({ children }: { children?: React.ReactNode }) {
             float scan = sin(vPosition.y * 10.0 - time * 4.0) * 0.1;
             vec3 color = vec3(0.0, 0.9, 1.0);
             gl_FragColor = vec4(color + scan * 0.6, 0.55);
-
           }
-
         `,
         transparent: true,
       }),
     []
   );
 
-  // ⚡️ 1. Calculamos el offset de forma SEGURA, sin modificar la 'scene'
-  const centerOffset = useMemo(() => {
-    const box = new THREE.Box3().setFromObject(scene);
-    const center = box.getCenter(new THREE.Vector3());
-    // Retornamos las coordenadas inversas para centrarlo
-    return [-center.x, -center.y, -center.z] as const; 
-  }, [scene]);
+
   
   // 🔥 Aplicar material UNA SOLA VEZ
   useMemo(() => {
@@ -69,25 +61,24 @@ function HologramBody({ children }: { children?: React.ReactNode }) {
     });
   }, [scene, hologramMaterial]);
 
+  // 🔥 Auto-rotación DETERMINISTA basada en el reloj global
+  // Antes usábamos `rotation.y += 0.004` (incremental), que se desincronizaba
+  // con OrbitControls y causaba el drift. Ahora usamos un valor ABSOLUTO.
   useFrame((state) => {
     if (ref.current) {
-      ref.current.rotation.y += 0.004;
+      ref.current.rotation.y = state.clock.getElapsedTime() * 0.3;
       hologramMaterial.uniforms.time.value = state.clock.getElapsedTime();
     }
   });
 
   return (
     <group ref={ref}>
-      {/* ⚡️ 2. Aplicamos la corrección de posición al GRUPO PADRE, no a la escena */}
-      <group position={centerOffset}>
+      <Center>
         <primitive object={scene} scale={1.2} />
-      </group>
-      
-      {/* ⚡️ 3. Los Hotspots se quedan aquí para rotar junto con el cuerpo */}
+      </Center>
       {children}
     </group>
   );
-
 }
 
 /* =========================
@@ -104,15 +95,15 @@ export default function BodyScanner3D({
 
   return (
     <div className="w-full h-full min-h-[300px] relative">
-      <Canvas camera={{ position: [0, 1, 4], fov: 45 }}>
+      {/* ⚡️ Optimizamos el Canvas limitando el DPR (Device Pixel Ratio) para evitar que celulares se congelen intentando renderizar 4K */}
+      <Canvas camera={{ position: [0, 1, 4], fov: 45 }} dpr={[1, 1.5]}>
 
         {/* 🌌 Luces */}
         <ambientLight intensity={0.4} />
         <pointLight position={[3, 3, 5]} color="cyan" intensity={2} />
 
-           <HologramBody>
-          
-          {/* Pecho: Un poco arriba del centro exacto (0.6) */}
+        <HologramBody>
+          {/* Pecho */}
           <Hotspot
             position={[0, 0.5, 0.10]} 
             type="chest"
@@ -121,7 +112,7 @@ export default function BodyScanner3D({
             onSelect={onSelectPart}
           />
 
-          {/* Cintura: Casi en el centro exacto (-0.1) */}
+          {/* Cintura */}
           <Hotspot
             position={[0, 0.1, 0.10]} 
             type="waist"
@@ -129,20 +120,20 @@ export default function BodyScanner3D({
             value={`${currentWaist} cm`}
             onSelect={onSelectPart}
           />
-
         </HologramBody>
 
-        {/* 🎮 Controles */}
+        {/* 🎮 Controles — BLOQUEADOS para evitar que el modelo se mueva de lugar */}
         <OrbitControls
           enableZoom={false}
+          enablePan={false}
+          enableRotate={false}
           minPolarAngle={Math.PI / 2}
           maxPolarAngle={Math.PI / 2}
         />
 
-        {/* ✨ Glow PRO */}
-        <EffectComposer>
-          <Bloom intensity={1.2} luminanceThreshold={0.15} />
-        </EffectComposer>
+        {/* ⚡️ EffectComposer (Bloom) eliminado temporalmente. 
+            El post-procesamiento era la causa del congelamiento del navegador porque 
+            fuerza a la tarjeta gráfica a renderizar la escena múltiples veces por frame. */}
 
         {/* 🌌 Fondo */}
         <color attach="background" args={["#0a0f1c"]} />

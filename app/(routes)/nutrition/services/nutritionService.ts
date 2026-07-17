@@ -1,3 +1,5 @@
+import { getAuthHeaders } from '@/services/api';
+
 const BASE_URL = "http://localhost:8080/api/nutrition";
 
 export interface MealData {
@@ -11,9 +13,13 @@ export interface MealData {
 export async function scanMeal(imageBlob: Blob) {
     const formData = new FormData();
     formData.append("image", imageBlob, "capture.jpg");
+    
+    const headers = getAuthHeaders(false);
+    // Don't set content-type for formData, fetch does it automatically with boundaries
 
     const res = await fetch(`${BASE_URL}/ai/scan`, {
         method: "POST",
+        headers: headers,
         body: formData,
     });
 
@@ -25,10 +31,10 @@ export async function scanMeal(imageBlob: Blob) {
     return res.json();
 }
 
-export async function saveMeal(mealData: MealData) {
-    const res = await fetch(`${BASE_URL}/meals`, {
+export async function saveMeal(userId: number, mealData: MealData) {
+    const res = await fetch(`${BASE_URL}/meals/${userId}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify(mealData),
     });
 
@@ -36,8 +42,8 @@ export async function saveMeal(mealData: MealData) {
     return res.json();
 }
 
-export async function getDashboardSummary() {
-    const res = await fetch(`${BASE_URL}/dashboard-summary`);
+export async function getDashboardSummary(userId: number) {
+    const res = await fetch(`${BASE_URL}/dashboard-summary/${userId}`, { headers: getAuthHeaders(false) });
     if (!res.ok) throw new Error("Error al cargar dashboard");
     return res.json();
 }

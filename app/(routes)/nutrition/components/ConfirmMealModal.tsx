@@ -11,21 +11,21 @@ interface ConfirmMealModalProps {
 export default function ConfirmMealModal({ data, onConfirm, onCancel, loading }: ConfirmMealModalProps) {
   if (!data) return null;
 
-  const results = data?.recognitionResults || data?.recognition_results || [];
+  // Nuevo formato plano de OpenAI: { name, calories, protein, carbs, fat }
+  const name = data?.name;
+  const hasData = name && name !== "No se detectó comida";
   
-  if (results.length === 0) {
+  if (!hasData) {
     return (
       <div className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
         <div className="bg-[#0f0f11] border border-red-500/20 p-8 rounded-[2.5rem] text-center space-y-4">
-          <p className="text-white font-black uppercase text-xs">⚠️ Error de Conexión con IA</p>
+          <p className="text-white font-black uppercase text-xs">⚠️ {name || "No se pudo analizar la imagen"}</p>
+          <p className="text-muted-foreground text-[10px]">Intenta tomar una foto más clara de tu comida.</p>
           <button onClick={onCancel} className="text-blue-500 text-[10px] font-bold uppercase underline">Cerrar</button>
         </div>
       </div>
     );
   }
-
-  const meal = results[0] || {};
-  const macros = meal?.nutritionalInfo || meal?.nutritional_info || {};
 
   const formatVal = (val: any) => {
     const num = parseFloat(val);
@@ -41,17 +41,17 @@ export default function ConfirmMealModal({ data, onConfirm, onCancel, loading }:
           <div className="inline-flex p-3 bg-blue-500/10 rounded-full border border-blue-500/20 text-blue-500 mb-2">
             <Trophy size={24} />
           </div>
-          <h2 className="text-2xl font-black italic uppercase text-white tracking-tighter text-center">IA Detected_</h2>
+          <h2 className="text-2xl font-black italic uppercase text-white tracking-tighter text-center">IA Detectó_</h2>
           <p className="text-blue-500 font-bold uppercase text-[10px] tracking-[0.4em] italic text-center">
-            {meal.name || "Plato Desconocido"}
+            {data.name || "Plato Desconocido"}
           </p>
         </div>
 
         {/* MACROS CARDS */}
         <div className="grid grid-cols-3 gap-3">
-          <MacroCard label="Prot" value={`${formatVal(macros.protein)}g`} color="text-blue-500" />
-          <MacroCard label="Carbs" value={`${formatVal(macros.carbs)}g`} color="text-pink-500" />
-          <MacroCard label="Fats" value={`${formatVal(macros.fat)}g`} color="text-purple-500" />
+          <MacroCard label="Prot" value={`${formatVal(data.protein)}g`} color="text-blue-500" />
+          <MacroCard label="Carbs" value={`${formatVal(data.carbs)}g`} color="text-pink-500" />
+          <MacroCard label="Fats" value={`${formatVal(data.fat)}g`} color="text-purple-500" />
         </div>
 
         {/* ENERGÍA TOTAL */}
@@ -61,7 +61,7 @@ export default function ConfirmMealModal({ data, onConfirm, onCancel, loading }:
             <span className="font-black italic uppercase text-xs tracking-widest">Energía Total</span>
           </div>
           <span className="text-2xl font-black text-white italic">
-            {formatVal(macros.calories)} <span className="text-[10px] uppercase ml-1">kcal</span>
+            {formatVal(data.calories)} <span className="text-[10px] uppercase ml-1">kcal</span>
           </span>
         </div>
 
@@ -73,10 +73,10 @@ export default function ConfirmMealModal({ data, onConfirm, onCancel, loading }:
           
           <button 
             disabled={loading}
-            onClick={() => onConfirm(meal)} 
+            onClick={() => onConfirm(data)} 
             className="flex-[2] py-5 rounded-3xl bg-blue-600 text-white font-black uppercase text-[10px] shadow-lg shadow-blue-500/20 hover:bg-blue-500 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            {loading ? "Guardando..." : <><Check size={16} /> Confirmar Log</>}
+            {loading ? "Guardando..." : <><Check size={16} /> Confirmar Registro</>}
           </button>
         </div>
 

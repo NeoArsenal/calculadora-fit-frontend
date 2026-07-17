@@ -1,0 +1,1 @@
+{"error":"Error en la solicitud","message":"Name for argument of type [java.lang.Long] not specified, and parameter name information not available via reflection. Ensure that the compiler uses the '-parameters' flag.","status":400,"timestamp":"2026-03-23T10:09:45.6135313"}

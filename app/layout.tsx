@@ -4,7 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import NextTopLoader from 'nextjs-toploader';
 import { Toaster } from "@/components/ui/sonner";
-import Sidebar from "./components/Sidebar"; // ⚡️ IMPORTAMOS TU NUEVO SIDEBAR
+import MainLayoutWrapper from "./components/MainLayoutWrapper";
 import { ThemeProvider } from "./components/ThemeProvider"; // ⚡️ IMPORTAMOS EL PROVIDER DEL TEMA
 
 const inter = Inter({ 
@@ -26,6 +26,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#3b82f6",
 };
+
+import { AppProvider } from "@/app/context/AppContext";
 
 export default function RootLayout({
   children,
@@ -58,21 +60,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {/* ⚡️ ESTRUCTURA MODIFICADA: flex (lado a lado) en lugar de flex-col (arriba a abajo) */}
-          <div className="relative flex h-screen w-full">
-            
-            {/* MENÚ LATERAL FIJO A LA IZQUIERDA */}
-            <Sidebar />
-
-            {/* CONTENIDO PRINCIPAL SCROLLEABLE A LA DERECHA */}
-            <main className="flex-1 overflow-y-auto bg-background/50">
-              {/* Un contenedor para darle márgenes y que no se pegue a los bordes */}
-              <div className="p-4 md:p-8 lg:p-10 max-w-[1600px] mx-auto">
-                {children}
-              </div>
-            </main>
-
-          </div>
+          <AppProvider>
+            <MainLayoutWrapper>
+              {children}
+            </MainLayoutWrapper>
+          </AppProvider>
         </ThemeProvider>
       </body>
     </html>
