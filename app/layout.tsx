@@ -29,6 +29,8 @@ export const viewport: Viewport = {
 
 import { AppProvider } from "@/app/context/AppContext";
 
+import SplashScreen from "@/app/components/SplashScreen";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -61,6 +63,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AppProvider>
+            <SplashScreen />
             <MainLayoutWrapper>
               {children}
             </MainLayoutWrapper>
