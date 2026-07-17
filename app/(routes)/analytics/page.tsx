@@ -90,7 +90,7 @@ export default function AnalyticsPage() {
         
         {/* GRÁFICO DE TENDENCIAS (8/12) */}
         <section className="xl:col-span-8 bg-card border border-border rounded-xl p-6 shadow-sm min-h-[350px] flex flex-col">
-          <div className="flex justify-between items-start mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div>
               <h2 className="text-lg font-bold text-foreground">Tendencia Corporal</h2>
               <div className="flex gap-2 mt-2">
@@ -106,10 +106,10 @@ export default function AnalyticsPage() {
               </div>
             </div>
             {/* Leyenda manual */}
-            <div className="flex gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-              <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Peso</span>
-              <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-pink-400"></div> Grasa %</span>
-              <span className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-indigo-400"></div> Músculo</span>
+            <div className="flex flex-wrap gap-3 sm:gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-black/10 dark:bg-white/5 py-1.5 px-3 rounded-full border border-border/50">
+              <span className="flex items-center gap-1.5 whitespace-nowrap"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Peso</span>
+              <span className="flex items-center gap-1.5 whitespace-nowrap"><div className="w-2 h-2 rounded-full bg-pink-400"></div> Grasa %</span>
+              <span className="flex items-center gap-1.5 whitespace-nowrap"><div className="w-2 h-2 rounded-full bg-indigo-400"></div> Músculo</span>
             </div>
           </div>
           
