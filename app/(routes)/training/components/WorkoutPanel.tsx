@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion, PanInfo } from "framer-motion";
 import { Plus, CheckCircle2, Check, Dumbbell, Trash2, FastForward, ChevronLeft } from "lucide-react";
 import { useExercises } from "../hooks/useExercises";
 import ProtocolCard from "./ProtocolCard";
@@ -175,6 +176,14 @@ export default function WorkoutPanel({ onFinish, onBack, initialRoutine = null }
         }));
     };
 
+    const removeSet = (exerciseId: number, setIndex: number) => {
+        setWorkoutLogs(prev => {
+            const exerciseSets = [...prev[exerciseId]];
+            exerciseSets.splice(setIndex, 1);
+            return { ...prev, [exerciseId]: exerciseSets };
+        });
+    };
+
     // ABRIR EL MODAL DE GUARDAR PLANTILLA
     const promptSaveTemplate = () => {
         if (activeExercises.length === 0) {
@@ -324,46 +333,61 @@ return (
                                     const isPR = currentWeight > 0 && (currentPR === 0 || currentWeight >= currentPR);
 
                                     return (
-                                        <div 
-                                            key={idx} 
-                                            className={`flex items-center gap-3 px-2 py-2 rounded-xl transition-all ${set.completed ? 'bg-blue-50 dark:bg-blue-600/10 border border-blue-200 dark:border-blue-500/20' : 'bg-transparent'}`}
-                                        >
-                                            <span className="w-1/5 text-center text-xs font-bold text-gray-500 dark:text-muted-foreground">
-                                                {idx + 1}
-                                            </span>
-                                            
-                                            <div className="w-2/5 relative flex items-center justify-center">
+                                        <div key={idx} className="relative overflow-hidden rounded-xl mb-1">
+                                            {/* Fondo rojo con tacho de basura que se revela al arrastrar */}
+                                            <div className="absolute inset-0 bg-red-500 rounded-xl flex items-center justify-end px-6 z-0">
+                                                <Trash2 className="text-white w-5 h-5" />
+                                            </div>
+
+                                            {/* Fila arrastrable */}
+                                            <motion.div 
+                                                drag="x"
+                                                dragConstraints={{ left: -80, right: 0 }}
+                                                dragElastic={0.2}
+                                                onDragEnd={(e, info) => {
+                                                    if (info.offset.x < -50) {
+                                                        removeSet(ex.id, idx);
+                                                    }
+                                                }}
+                                                className={`relative z-10 flex items-center gap-3 px-2 py-2 rounded-xl transition-colors ${set.completed ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-500/30' : 'bg-gray-50/50 dark:bg-[#0a0a0b]'} border border-transparent`}
+                                            >
+                                                <span className="w-1/5 text-center text-xs font-bold text-gray-500 dark:text-muted-foreground">
+                                                    {idx + 1}
+                                                </span>
+                                                
+                                                <div className="w-2/5 relative flex items-center justify-center">
+                                                    <input 
+                                                        type="number" 
+                                                        placeholder="-"
+                                                        value={set.weight}
+                                                        onChange={(e) => updateSet(ex.id, idx, 'weight', e.target.value)}
+                                                        disabled={set.completed || isSaving}
+                                                        className="w-full bg-white dark:bg-secondary/30 border border-gray-200 dark:border-transparent rounded-lg text-center text-xs font-black text-gray-900 dark:text-white py-2 outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-colors shadow-sm" 
+                                                    />
+                                                    {isPR && (
+                                                        <span className="absolute -top-2.5 -right-2 bg-gradient-to-br from-orange-400 to-red-600 text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full shadow-lg shadow-orange-500/50 animate-bounce pointer-events-none">
+                                                            🔥 PR
+                                                        </span>
+                                                    )}
+                                                </div>
+
                                                 <input 
                                                     type="number" 
                                                     placeholder="-"
-                                                    value={set.weight}
-                                                    onChange={(e) => updateSet(ex.id, idx, 'weight', e.target.value)}
+                                                    value={set.reps}
+                                                    onChange={(e) => updateSet(ex.id, idx, 'reps', e.target.value)}
                                                     disabled={set.completed || isSaving}
-                                                    className="w-full bg-white dark:bg-secondary/30 border border-gray-200 dark:border-transparent rounded-lg text-center text-xs font-black text-gray-900 dark:text-white py-2 outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-colors shadow-sm" 
+                                                    className="w-2/5 bg-white dark:bg-secondary/30 border border-gray-200 dark:border-transparent rounded-lg text-center text-xs font-black text-gray-900 dark:text-white py-2 outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-colors shadow-sm" 
                                                 />
-                                                {isPR && (
-                                                    <span className="absolute -top-2.5 -right-2 bg-gradient-to-br from-orange-400 to-red-600 text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full shadow-lg shadow-orange-500/50 animate-bounce pointer-events-none">
-                                                        🔥 PR
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                        <input 
-                                            type="number" 
-                                            placeholder="-"
-                                            value={set.reps}
-                                            onChange={(e) => updateSet(ex.id, idx, 'reps', e.target.value)}
-                                            disabled={set.completed || isSaving}
-                                            className="w-2/5 bg-white dark:bg-secondary/30 border border-gray-200 dark:border-transparent rounded-lg text-center text-xs font-black text-gray-900 dark:text-white py-2 outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 transition-colors shadow-sm" 
-                                        />
-                                        <button 
-                                            onClick={() => updateSet(ex.id, idx, 'completed', !set.completed)}
-                                            disabled={isSaving}
-                                            className={`w-1/5 flex justify-center transition-all ${set.completed ? 'text-blue-500 scale-110' : 'text-gray-300 dark:text-muted-foreground hover:text-gray-900 dark:hover:text-white'} disabled:opacity-50`}
-                                        >
-                                            <CheckCircle2 size={20} />
-                                        </button>
-                                    </div>
+                                                <button 
+                                                    onClick={() => updateSet(ex.id, idx, 'completed', !set.completed)}
+                                                    disabled={isSaving}
+                                                    className={`w-1/5 flex justify-center transition-all ${set.completed ? 'text-blue-500 scale-110' : 'text-gray-300 dark:text-muted-foreground hover:text-gray-900 dark:hover:text-white'} disabled:opacity-50`}
+                                                >
+                                                    <CheckCircle2 size={20} />
+                                                </button>
+                                            </motion.div>
+                                        </div>
                                     );
                                 })
                             ) : (
