@@ -244,7 +244,8 @@ export default function WorkoutPanel({ onFinish, onBack, initialRoutine = null }
                 exerciseLogs: finalData
             };
 
-            const response = await fetch('http://localhost:8080/api/workout-sessions', {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+            const response = await fetch(`${apiUrl}/workout-sessions`, {
                 method: 'POST',
                 headers: getAuthHeaders(true),
                 body: JSON.stringify(payload),

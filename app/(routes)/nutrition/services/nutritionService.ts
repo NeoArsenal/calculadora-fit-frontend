@@ -1,6 +1,6 @@
 import { getAuthHeaders } from '@/services/api';
 
-const BASE_URL = "http://localhost:8080/api/nutrition";
+const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'}/nutrition`;
 
 export interface MealData {
   name: string;

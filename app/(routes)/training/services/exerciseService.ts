@@ -2,7 +2,7 @@
 
 import { getAuthHeaders } from "@/services/api";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 export async function getExercises() {
   const res = await fetch(`${BASE_URL}/exercises`, { headers: getAuthHeaders(false) });
