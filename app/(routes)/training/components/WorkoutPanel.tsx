@@ -440,30 +440,35 @@ return (
             </CommandDialog>
 
             {/* 4. BOTONES FINALES */}
-            <div className="flex gap-4 mt-4">
+            <div className="flex gap-3 mt-4">
                 <button 
                     onClick={promptSaveTemplate}
                     disabled={isSaving || isSavingTemplate}
-                    className={`w-1/3 bg-gray-100 dark:bg-secondary/30 hover:bg-gray-200 dark:hover:bg-secondary/50 border border-gray-200 dark:border-border text-gray-700 dark:text-gray-300 py-5 rounded-[1.5rem] flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest transition-all shadow-sm
+                    className={`w-[35%] bg-gray-100 dark:bg-[#111113] hover:bg-gray-200 dark:hover:bg-[#1a1a1d] border border-gray-200 dark:border-white/5 text-gray-700 dark:text-gray-400 py-4 px-2 rounded-[1.2rem] flex flex-col items-center justify-center gap-1 font-black text-[9px] uppercase tracking-[0.15em] leading-tight transition-all shadow-sm
                         ${isSavingTemplate ? 'cursor-not-allowed opacity-70' : 'active:scale-95'}`}
                 >
-                    {isSavingTemplate ? "Guardando..." : "Guardar Plantilla"}
+                    {isSavingTemplate ? "..." : (
+                        <>
+                            <span>Guardar</span>
+                            <span>Plantilla</span>
+                        </>
+                    )}
                 </button>
 
                 <button 
                     onClick={handleFinishWorkout}
                     disabled={isSaving || isSavingTemplate}
-                    className={`w-2/3 text-white py-5 rounded-[1.5rem] flex items-center justify-center gap-3 font-black italic uppercase tracking-[0.2em] shadow-xl transition-all
+                    className={`flex-1 text-white py-4 px-4 rounded-[1.2rem] flex items-center justify-center gap-2 font-black italic uppercase text-xs tracking-[0.15em] shadow-lg transition-all
                         ${isSaving || isSavingTemplate 
                             ? 'bg-blue-800 cursor-not-allowed opacity-70' 
-                            : 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/30 active:scale-95'
+                            : 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/25 active:scale-95'
                         }`}
                 >
                     {isSaving ? (
-                        <span className="animate-pulse">Guardando Protocolo...</span>
+                        <span className="animate-pulse">Guardando...</span>
                     ) : (
                         <>
-                            <CheckCircle2 size={20} /> Finalizar Protocolo
+                            <CheckCircle2 size={16} className="text-white/80" /> Finalizar Protocolo
                         </>
                     )}
                 </button>
