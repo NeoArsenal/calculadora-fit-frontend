@@ -158,9 +158,13 @@ export default function WorkoutPanel({ onFinish, onBack, initialRoutine = null }
         });
 
         // Activar temporizador al marcar como completado
-        if (field === "completed" && value === true) {
-            setRestTime(maxRestTime);
-            playPop(); // 🔊 Sonido de serie completada
+        if (field === "completed") {
+            if (value === true) {
+                setRestTime(maxRestTime);
+                playPop(); // 🔊 Sonido de serie completada
+            } else {
+                setRestTime(null); // 🛑 Desaparecer el reloj si desmarca la serie
+            }
         }
     };
 
