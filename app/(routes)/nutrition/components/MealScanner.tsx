@@ -109,7 +109,7 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
               autoPlay
               playsInline
               muted
-              className="w-full h-full object-cover scale-x-[-1]"
+              className="w-full h-full object-cover"
             />
 
             <div className="absolute inset-0 pointer-events-none">
