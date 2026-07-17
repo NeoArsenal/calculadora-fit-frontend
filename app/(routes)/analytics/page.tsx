@@ -11,7 +11,7 @@ import { calculateAge, calculateTDEE, calculateGoalProjection } from "@/app/util
 import { updateUserProfile } from "@/services/api";
 
 export default function AnalyticsPage() {
-  const { analytics: globalAnalytics, loading, userProfile, records, refreshEcosystem, CURRENT_USER_ID, trainingSessions } = useApp();
+  const { analytics: globalAnalytics, loading, userProfile, records, refreshEcosystem, CURRENT_USER_ID, trainingSessions, nutritionSummary } = useApp();
   const currentStreak = globalAnalytics?.currentStreak;
   const totalVolume = globalAnalytics?.totalVolume;
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -171,7 +171,38 @@ export default function AnalyticsPage() {
         </section>
       </div>
 
-      {/* SECCIÓN INTERMEDIA: 4 Tarjetas KPI */}
+      {/* SECCIÓN INTERMEDIA: Resumen de Hoy */}
+      <div className="bg-card dark:bg-[#111827] border border-border/50 rounded-2xl p-6 shadow-sm mb-6 flex flex-col md:flex-row gap-6 items-center justify-between">
+         <div className="flex items-center gap-4 w-full md:w-auto">
+             <div className="p-4 bg-blue-500/10 rounded-full border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)] text-blue-500">
+                <Flame size={24} />
+             </div>
+             <div>
+                <h3 className="text-lg font-bold text-foreground tracking-tight">Tu Progreso de Hoy</h3>
+                <p className="text-xs text-muted-foreground font-medium mt-1">Calorías y Entrenamientos en tiempo real</p>
+             </div>
+         </div>
+         <div className="flex justify-between md:gap-8 w-full md:w-auto bg-black/10 dark:bg-black/30 p-4 rounded-xl border border-white/5">
+             <div className="flex flex-col items-center">
+                 <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Calorías</span>
+                 <span className="text-xl font-black text-foreground">{nutritionSummary?.totals?.calories || 0} <span className="text-[10px] text-muted-foreground font-bold">/ {targetCalories > 0 ? targetCalories : 2000}</span></span>
+             </div>
+             <div className="w-[1px] bg-border/50 hidden md:block"></div>
+             <div className="flex flex-col items-center">
+                 <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Proteína</span>
+                 <span className="text-xl font-black text-blue-500">{nutritionSummary?.totals?.protein || 0}g</span>
+             </div>
+             <div className="w-[1px] bg-border/50 hidden md:block"></div>
+             <div className="flex flex-col items-center">
+                 <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Rutina</span>
+                 <span className={`text-xl font-black ${trainingSessions?.some((s: any) => new Date(s.endTime || s.startTime).toDateString() === new Date().toDateString()) ? 'text-emerald-500' : 'text-amber-500'}`}>
+                    {trainingSessions?.some((s: any) => new Date(s.endTime || s.startTime).toDateString() === new Date().toDateString()) ? "✅" : "⏳"}
+                 </span>
+             </div>
+         </div>
+      </div>
+
+      {/* SECCIÓN INFERIOR: 4 Tarjetas KPI */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
         {/* KPI 1: Best Lift */}

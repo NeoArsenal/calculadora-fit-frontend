@@ -64,11 +64,25 @@ export default function BodyCompositionChart({ range = "6M" }: { range?: string 
       };
     });
     
-    if (result.length === 0) {
-      return [{ month: 'NO DATA', weight: 0, fat: 0, muscle: 0 }];
-    }
     return result;
   }, [records, range]);
+
+  if (chartData.length === 0 || (chartData.length === 1 && chartData[0].month === 'NO DATA')) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center text-center opacity-60">
+        <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mb-3">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+            <path d="M3 3v18h18" />
+            <path d="M18 17V9" />
+            <path d="M13 17V5" />
+            <path d="M8 17v-3" />
+          </svg>
+        </div>
+        <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Sin Datos de Peso</p>
+        <p className="text-xs text-gray-500 mt-1 max-w-[200px]">Registra tu peso corporal para ver tu evolución en el tiempo.</p>
+      </div>
+    );
+  }
 
   return (
     // ResponsiveContainer hace que el gráfico se adapte al 100% del div padre
