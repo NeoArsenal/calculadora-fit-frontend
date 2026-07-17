@@ -429,8 +429,8 @@ return (
                                         )}
                                     </div>
                                     <div className="flex flex-col flex-grow">
-                                        <span className="uppercase text-xs font-black text-white">{ex.name}</span>
-                                        <span className="text-[9px] text-blue-400 font-bold uppercase tracking-wider">{ex.target || ex.bodyPart}</span>
+                                        <span className="uppercase text-xs font-black text-gray-900 dark:text-white">{ex.name}</span>
+                                        <span className="text-[9px] text-blue-500 dark:text-blue-400 font-bold uppercase tracking-wider">{ex.target || ex.bodyPart}</span>
                                     </div>
                                 </CommandItem>
                             ))}
