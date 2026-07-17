@@ -217,10 +217,13 @@ export default function WorkoutPanel({ onFinish, onBack, initialRoutine = null }
     // 🚀 EL CIERRE DEL ENTRENAMIENTO 
     const handleFinishWorkout = async () => {
         const finalData = activeExercises.map(ex => {
-            const completedSets = workoutLogs[ex.id].filter(s => s.completed);
+            // UX MEJORA: Si escribieron peso y reps pero olvidaron darle al check, lo tomamos como completado igual.
+            const completedSets = workoutLogs[ex.id].filter(s => 
+                s.completed || (String(s.weight).trim() !== "" && String(s.reps).trim() !== "")
+            );
             
-            const maxWeight = Math.max(...completedSets.map(s => parseFloat(s.weight) || 0), 0);
-            const bestReps = completedSets.length > 0 ? parseInt(completedSets[0].reps, 10) || 0 : 0;
+            const maxWeight = Math.max(...completedSets.map(s => parseFloat(String(s.weight)) || 0), 0);
+            const bestReps = completedSets.length > 0 ? parseInt(String(completedSets[0].reps), 10) || 0 : 0;
 
             return {
                 exerciseId: ex.id,
@@ -232,7 +235,9 @@ export default function WorkoutPanel({ onFinish, onBack, initialRoutine = null }
         }).filter(ex => ex.setsDone > 0); 
 
         if (finalData.length === 0) {
-            toast.error("No has completado ninguna serie. ¡Anota tus pesos y dale al check verde! 🏋️‍♂️");
+            toast.error("Rutina vacía. Escribe tus pesos y repeticiones antes de finalizar.", {
+                description: "Debes llenar al menos una serie para poder guardar el entrenamiento."
+            });
             return;
         }
 
@@ -520,7 +525,7 @@ return (
 
             {/* ⏱️ TEMPORIZADOR INTELIGENTE UI */}
             {restTime !== null && (
-                <div className="fixed bottom-24 right-4 md:bottom-12 md:right-12 bg-gray-900/90 dark:bg-[#0a0a0b]/80 backdrop-blur-xl border border-white/20 dark:border-white/10 p-4 rounded-3xl shadow-2xl z-50 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-500">
+                <div className="fixed top-20 right-4 md:top-24 md:right-12 bg-gray-900/90 dark:bg-[#0a0a0b]/95 backdrop-blur-xl border border-white/20 dark:border-white/10 p-3 rounded-3xl shadow-2xl z-50 flex items-center gap-4 animate-in fade-in slide-in-from-top-8 duration-500">
                     <div className="relative w-16 h-16 flex items-center justify-center">
                         <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                             <circle cx="50" cy="50" r="45" className="stroke-white/10 dark:stroke-white/5" strokeWidth="8" fill="none" />
