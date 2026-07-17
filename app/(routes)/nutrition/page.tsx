@@ -61,7 +61,7 @@ export default function NutritionDashboard() {
         name: m.name,
         kcal: m.calories,
         p: m.protein,
-        time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        time: new Date(m.createdAt.endsWith('Z') ? m.createdAt : m.createdAt + 'Z').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         color: "text-blue-500 bg-blue-50 dark:bg-blue-900/20"
       })));
     }
