@@ -7,18 +7,20 @@ import * as THREE from "three";
 
 interface HotspotProps {
   position: [number, number, number];
-  type: "chest" | "waist";
+  type?: string;
   label: string;
   value: string;
-  onSelect: (type: "chest" | "waist") => void;
+  onSelect?: (type: string) => void;
+  color?: string;
 }
 
 export default function Hotspot({
   position,
-  type,
+  type = "default",
   label,
   value,
   onSelect,
+  color = "#ff3b3b",
 }: HotspotProps) {
   const ref = useRef<THREE.Mesh>(null!);
   const [hovered, setHovered] = useState(false);
@@ -35,7 +37,7 @@ export default function Hotspot({
     <mesh
       ref={ref}
       position={position}
-      onClick={() => onSelect(type)}
+      onClick={() => onSelect && onSelect(type)}
       onPointerOver={() => {
         document.body.style.cursor = "pointer";
         setHovered(true);
@@ -48,8 +50,8 @@ export default function Hotspot({
       <sphereGeometry args={[0.08, 16, 16]} />
 
       <meshStandardMaterial
-        color={hovered ? "#3b82f6" : "#ff3b3b"}
-        emissive={hovered ? "#3b82f6" : "#ff3b3b"}
+        color={hovered ? "#ffffff" : color}
+        emissive={hovered ? "#ffffff" : color}
         emissiveIntensity={hovered ? 5 : 2}
       />
 

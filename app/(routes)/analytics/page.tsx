@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { Download, Trophy, Flame, Dumbbell, Target, Settings } from "lucide-react";
-import WorkoutHeatmap from "./components/WorkoutHeatmap"; 
+import WorkoutHeatmap from "./components/WorkoutHeatmap";
+import MuscleScanner3D from "./components/MuscleScanner3D"; 
 import BodyCompositionChart from "./components/BodyCompositionChart";
 import SupplementAdherence from "./components/SupplementAdherence";
 import GoalConfigModal from "./components/GoalConfigModal";
@@ -281,6 +282,19 @@ export default function AnalyticsPage() {
         <SupplementAdherence />
         
       </div>
+
+      {/* SECCIÓN INTERMEDIA: Radar Muscular Holográfico */}
+      <section className="bg-card dark:bg-[#111827] border border-border/50 rounded-2xl p-6 shadow-lg mb-6">
+        <div className="flex flex-col mb-4">
+          <h2 className="text-lg font-bold text-foreground">Equilibrio Muscular</h2>
+          <p className="text-xs text-muted-foreground uppercase tracking-widest mt-1">
+            Volumen por grupo muscular (Últimos 30 días)
+          </p>
+        </div>
+        <div className="w-full relative rounded-xl overflow-hidden border border-border/20">
+          <MuscleScanner3D />
+        </div>
+      </section>
 
       {/* SECCIÓN INFERIOR: Workout Consistency (Heatmap) */}
       <section className="bg-card dark:bg-[#111827] border border-border/50 rounded-2xl p-6 shadow-lg">
