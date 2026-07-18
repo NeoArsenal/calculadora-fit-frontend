@@ -392,8 +392,8 @@ return (
                                 })
                             ) : (
                                 /* ✨ ESTADO VACÍO: Cuando el ejercicio no tiene sets */
-                                <div className="py-8 border-2 border-dashed border-gray-200 dark:border-white/5 rounded-2xl text-center bg-white dark:bg-black/10 transition-colors shadow-sm">
-                                    <p className="text-[10px] text-gray-500 dark:text-muted-foreground uppercase font-black tracking-widest mb-4">
+                                <div className="py-8 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-2xl text-center bg-gray-50/50 dark:bg-[#0a0a0b] transition-colors shadow-sm">
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-widest mb-4">
                                         No hay series registradas
                                     </p>
                                     <button 
@@ -422,11 +422,11 @@ return (
                 
                 {/* ✨ EMPTY STATE GLOBAL: CUANDO NO HAY NINGÚN EJERCICIO EN LA RUTINA */}
                 {activeExercises.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed border-gray-200 dark:border-white/10 rounded-[2.5rem] bg-gray-50/50 dark:bg-black/20">
+                    <div className="flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed border-gray-200 dark:border-white/10 rounded-[2.5rem] bg-white dark:bg-[#0a0a0b]">
                         <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 text-blue-500 rounded-full flex items-center justify-center mb-4 shadow-inner">
                             <Dumbbell size={32} />
                         </div>
-                        <h3 className="text-lg font-black italic uppercase text-gray-900 dark:text-white mb-2 tracking-widest">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 tracking-tight">
                             Rutina Vacía
                         </h3>
                         <p className="text-xs text-gray-500 dark:text-muted-foreground max-w-[250px] mx-auto leading-relaxed font-medium">
@@ -472,8 +472,8 @@ return (
                 </Command>
             </CommandDialog>
 
-            {/* 4. BOTONES FINALES */}
-            <div className="flex gap-3 mt-4">
+            {/* 4. BOTONES FINALES (Fijados al fondo) */}
+            <div className="sticky bottom-0 pb-6 pt-4 bg-background/95 backdrop-blur-xl z-40 flex gap-3 mt-8 -mx-4 px-4 border-t border-gray-200 dark:border-white/10 rounded-t-[2rem]">
                 <button 
                     onClick={promptSaveTemplate}
                     disabled={isSaving || isSavingTemplate}

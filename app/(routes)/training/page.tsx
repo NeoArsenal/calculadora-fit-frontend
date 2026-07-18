@@ -107,25 +107,25 @@ export default function TrainingPage() {
             onTouchEnd={isTrainingActive ? handleTouchEnd : undefined}
         >
             {/* Cabecera Global del Módulo de Entrenamiento */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-4 md:pt-0">
-                <div>
-                    <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tighter transition-colors">
-                        Entrenamiento<span className="text-blue-500">_</span>
-                    </h1>
-                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">
-                        Control de Sesiones y Progreso
-                    </p>
-                </div>
-                
-                {!isTrainingActive && (
+            {!isTrainingActive && (
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-4 md:pt-0">
+                    <div>
+                        <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tighter transition-colors">
+                            Entrenamiento<span className="text-blue-500">_</span>
+                        </h1>
+                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">
+                            Control de Sesiones y Progreso
+                        </p>
+                    </div>
+                    
                     <button 
                         onClick={() => startRoutine()}
-                        className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-black italic uppercase tracking-widest shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all active:scale-95 flex-shrink-0"
+                        className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl flex items-center justify-center gap-2 font-bold uppercase tracking-widest shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all active:scale-95 flex-shrink-0"
                     >
-                        <Play size={18} fill="currentColor" /> Rutina Libre
+                        <Play size={18} fill="currentColor" /> Comenzar
                     </button>
-                )}
-            </div>
+                </div>
+            )}
 
             {/* --- RENDERIZADO MODO ENFOQUE --- */}
             {isTrainingActive ? (
