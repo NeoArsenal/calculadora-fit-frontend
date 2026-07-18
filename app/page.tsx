@@ -14,7 +14,7 @@ import { ThemeToggle } from './components/ThemeToggle';
 
 export default function DashboardPage() {
   // 🎯 ESTADO DE INTEGRACIÓN: Controla qué parte del cuerpo está bajo la lupa
-  const [activeFocus, setActiveFocus] = useState<'chest' | 'waist' | null>(null);
+  const [activeFocus, setActiveFocus] = useState<string | null>(null);
 
   // Consumimos la lógica desde tu Contexto Global
   const { userProfile, records, nutrition, loading, refreshEcosystem } = useApp();

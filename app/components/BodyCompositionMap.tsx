@@ -10,7 +10,7 @@ import { useApp } from "@/app/context/AppContext";
 // 1. Definimos el "contrato" para que acepte la función
 interface BodyCompositionMapProps {
   records: any[];
-  onSelectPart: (part: 'chest' | 'waist' | null) => void;
+  onSelectPart: (part: string | null) => void;
   onRefresh?: () => void | Promise<void>; // ⚡️ Nueva prop opcional para recargar datos
 }
 

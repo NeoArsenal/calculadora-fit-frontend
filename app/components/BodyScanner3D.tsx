@@ -12,7 +12,7 @@ import * as THREE from "three";
 ========================= */
 interface BodyScannerProps {
   records: any[];
-  onSelectPart: (part: "chest" | "waist" | null) => void;
+  onSelectPart: (part: string | null) => void;
 }
 
 /* =========================
