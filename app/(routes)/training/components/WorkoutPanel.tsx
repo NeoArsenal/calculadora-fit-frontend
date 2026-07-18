@@ -473,7 +473,7 @@ return (
             </CommandDialog>
 
             {/* 4. BOTONES FINALES (Fijados al fondo) */}
-            <div className="sticky bottom-0 pb-6 pt-4 bg-background/95 backdrop-blur-xl z-40 flex gap-3 mt-8 -mx-4 px-4 border-t border-gray-200 dark:border-white/10 rounded-t-[2rem]">
+            <div className="fixed bottom-[80px] left-0 right-0 p-4 bg-background/95 backdrop-blur-xl z-40 flex gap-3 border-t border-gray-200 dark:border-white/10 rounded-t-[2rem]">
                 <button 
                     onClick={promptSaveTemplate}
                     disabled={isSaving || isSavingTemplate}
@@ -491,17 +491,17 @@ return (
                 <button 
                     onClick={handleFinishWorkout}
                     disabled={isSaving || isSavingTemplate}
-                    className={`flex-1 text-white py-4 px-4 rounded-[1.2rem] flex items-center justify-center gap-2 font-black italic uppercase text-xs tracking-[0.15em] shadow-lg transition-all
+                    className={`flex-1 text-white py-4 px-4 rounded-[1.2rem] flex items-center justify-center gap-2 font-bold uppercase text-xs tracking-widest shadow-lg transition-all
                         ${isSaving || isSavingTemplate 
-                            ? 'bg-blue-800 cursor-not-allowed opacity-70' 
-                            : 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/25 active:scale-95'
+                            ? 'bg-red-800 cursor-not-allowed opacity-70' 
+                            : 'bg-red-600 hover:bg-red-500 shadow-red-600/25 active:scale-95'
                         }`}
                 >
                     {isSaving ? (
                         <span className="animate-pulse">Guardando...</span>
                     ) : (
                         <>
-                            <CheckCircle2 size={16} className="text-white/80" /> Finalizar Protocolo
+                            <CheckCircle2 size={16} className="text-white/80" /> Finalizar Entrenamiento
                         </>
                     )}
                 </button>
