@@ -114,6 +114,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         nextLevelXp: gamificationData?.nextLevelXp ?? 100,
         rankName: gamificationData?.rankName ?? 'Rookie'
       });
+      if (nutriSummary && nutriSummary.meals) {
+        const today = new Date();
+        const todayStr = today.getFullYear() + "-" + (today.getMonth()+1).toString().padStart(2, '0') + "-" + today.getDate().toString().padStart(2, '0');
+        
+        const filteredMeals = nutriSummary.meals.filter((m: any) => {
+          const mDate = new Date(m.createdAt.endsWith('Z') ? m.createdAt : m.createdAt + 'Z');
+          const mDateStr = mDate.getFullYear() + "-" + (mDate.getMonth()+1).toString().padStart(2, '0') + "-" + mDate.getDate().toString().padStart(2, '0');
+          return mDateStr === todayStr;
+        });
+
+        const recalculatedTotals = filteredMeals.reduce((acc: any, m: any) => {
+          acc.calories += (m.calories || 0);
+          acc.protein += (m.protein || 0);
+          acc.carbs += (m.carbs || 0);
+          acc.fats += (m.fat || m.fats || 0);
+          return acc;
+        }, { calories: 0, protein: 0, carbs: 0, fats: 0 });
+
+        nutriSummary.meals = filteredMeals;
+        nutriSummary.totals = recalculatedTotals;
+      }
       setNutritionSummary(nutriSummary);
       setSupplements(supplementsData);
       setSupplementLogs(logsData);

@@ -349,7 +349,7 @@ return (
                                                         removeSet(ex.id, idx);
                                                     }
                                                 }}
-                                                className={`relative z-10 flex items-center gap-3 px-2 py-2 rounded-xl transition-colors ${set.completed ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-500/30' : 'bg-gray-50/50 dark:bg-[#0a0a0b]'} border border-transparent`}
+                                                className={`relative z-10 flex items-center gap-3 px-2 py-2 rounded-xl transition-colors ${set.completed ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-500/30' : 'bg-white dark:bg-[#0a0a0b]'} border border-transparent`}
                                             >
                                                 <span className="w-1/5 text-center text-xs font-bold text-gray-500 dark:text-muted-foreground">
                                                     {idx + 1}
