@@ -157,7 +157,7 @@ export default function TrainingPage() {
                                     <button 
                                         key={routine.id}
                                         onClick={() => startRoutine(routine)}
-                                        className="bg-white dark:bg-[#0f172a]/80 backdrop-blur-md border border-gray-200 dark:border-white/5 hover:border-blue-500/30 p-5 rounded-[2rem] text-left transition-all shadow-xl shadow-gray-200/50 dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group relative overflow-hidden flex flex-col justify-between min-h-[140px]"
+                                        className="bg-white dark:bg-[#0a0a0b] hover:bg-gray-50 dark:hover:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-blue-500/30 p-5 rounded-[2rem] text-left transition-all shadow-xl shadow-gray-200/50 dark:shadow-none group relative overflow-hidden flex flex-col justify-between min-h-[140px]"
                                     >
                                         <div className="absolute top-0 left-0 w-1 h-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                         
