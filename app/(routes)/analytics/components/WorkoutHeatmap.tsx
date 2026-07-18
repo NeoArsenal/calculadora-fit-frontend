@@ -41,7 +41,16 @@ export default function WorkoutHeatmap() {
     return data;
   }, [trainingSessions]);
   
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  const months = useMemo(() => {
+    if (days.length === 0) return [];
+    const uniqueMonths = new Set<string>();
+    days.forEach(day => {
+      const monthName = day.date.toLocaleDateString('es-ES', { month: 'short' });
+      // Capitalizar la primera letra del mes
+      uniqueMonths.add(monthName.charAt(0).toUpperCase() + monthName.slice(1));
+    });
+    return Array.from(uniqueMonths);
+  }, [days]);
 
   const getColor = (intensity: number) => {
     switch (intensity) {
