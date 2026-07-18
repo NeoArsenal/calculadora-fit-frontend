@@ -11,7 +11,19 @@ export default function FitAICoach({ activeFocus, records, onClose }: any) {
     if (activeFocus === 'chest') {
       return `Con ${currentWeight}kg, el enfoque en el torso es clave. El volumen está funcionando, pero no descuides la técnica en el press banca.`;
     }
-    return "Analizando datos biométricos...";
+    if (activeFocus === 'espalda') {
+      return `Una espalda fuerte mejora tu postura y te ayuda en todos los levantamientos pesados. ¡Sigue metiéndole a los remos y dominadas!`;
+    }
+    if (activeFocus === 'hombros') {
+      return `Unos hombros bien desarrollados dan esa apariencia en "V". No olvides trabajar el deltoides posterior para mantener la salud articular.`;
+    }
+    if (activeFocus === 'brazos') {
+      return `El volumen en brazos responde bien a altas repeticiones. Asegúrate de aislar bien el bíceps y tríceps sin usar impulso.`;
+    }
+    if (activeFocus === 'piernas') {
+      return `¡El día de pierna separa a los novatos de los veteranos! Tu base de poder está aquí, mantén la consistencia en las sentadillas.`;
+    }
+    return "Analizando datos biométricos y de rendimiento...";
   };
 
   return (

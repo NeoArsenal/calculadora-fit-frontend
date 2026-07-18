@@ -84,63 +84,92 @@ function HologramBody({ children }: { children?: React.ReactNode }) {
 /* =========================
    🚀 ESCENA PRINCIPAL
 ========================= */
+import { useApp } from "@/app/context/AppContext";
+import { getExercises } from "@/app/(routes)/training/services/exerciseService";
+import { useState, useEffect } from "react";
+
 export default function BodyScanner3D({
   records,
   onSelectPart,
 }: BodyScannerProps) {
   const currentRecord = records?.[0] || null;
-
   const currentWeight = currentRecord?.weightKg || 86.6;
   const currentWaist = currentRecord?.waistCircumferenceCm || 90;
 
+  const { trainingSessions } = useApp();
+  const [exercises, setExercises] = useState<any[]>([]);
+
+  useEffect(() => {
+    getExercises().then(setExercises).catch(console.error);
+  }, []);
+
+  const muscleData = useMemo(() => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const recentSessions = (trainingSessions || []).filter((s: any) => {
+      if (!s.workoutDate) return false;
+      return new Date(s.workoutDate) >= thirtyDaysAgo;
+    });
+
+    const setsByGroup = {
+      chest: 0,
+      back: 0,
+      shoulders: 0,
+      arms: 0,
+      legs: 0,
+      core: 0,
+    };
+
+    recentSessions.forEach((session: any) => {
+      if (session.exerciseLogs) {
+        session.exerciseLogs.forEach((log: any) => {
+          const exercise = exercises.find(e => e.id === log.exerciseId);
+          if (exercise && exercise.bodyPart) {
+            const bodyPart = exercise.bodyPart.toLowerCase();
+            const sets = log.setsDone || 0;
+            if (bodyPart.includes("chest")) setsByGroup.chest += sets;
+            else if (bodyPart.includes("back")) setsByGroup.back += sets;
+            else if (bodyPart.includes("shoulders")) setsByGroup.shoulders += sets;
+            else if (bodyPart.includes("arm")) setsByGroup.arms += sets;
+            else if (bodyPart.includes("leg")) setsByGroup.legs += sets;
+            else if (bodyPart.includes("waist") || bodyPart.includes("core")) setsByGroup.core += sets;
+          }
+        });
+      }
+    });
+    return setsByGroup;
+  }, [trainingSessions, exercises]);
+
+  const getColor = (sets: number) => {
+    if (sets === 0) return "#374151"; 
+    if (sets < 10) return "#3b82f6"; 
+    if (sets < 20) return "#8b5cf6"; 
+    return "#ef4444"; 
+  };
+
   return (
     <div className="w-full h-full min-h-[300px] relative">
-      {/* ⚡️ Optimizamos el Canvas limitando el DPR (Device Pixel Ratio) para evitar que celulares se congelen intentando renderizar 4K */}
       <Canvas camera={{ position: [0, 1, 4], fov: 45 }} dpr={[1, 1.5]}>
-
-        {/* 🌌 Luces */}
         <ambientLight intensity={0.4} />
         <pointLight position={[3, 3, 5]} color="cyan" intensity={2} />
 
         <HologramBody>
-          {/* Pecho */}
-          <Hotspot
-            position={[0, 0.5, 0.10]} 
-            type="chest"
-            label="PESO ACTUAL"
-            value={`${currentWeight} kg`}
-            onSelect={onSelectPart}
-          />
-
-          {/* Cintura */}
-          <Hotspot
-            position={[0, 0.1, 0.10]} 
-            type="waist"
-            label="CINTURA"
-            value={`${currentWaist} cm`}
-            onSelect={onSelectPart}
-          />
+          {/* Métricas Principales (Legacy) */}
+          <Hotspot position={[0, 0.5, 0.15]} type="chest" label="PESO ACTUAL" value={`${currentWeight} kg`} onSelect={onSelectPart} />
+          <Hotspot position={[0, 0.1, 0.15]} type="waist" label="CINTURA" value={`${currentWaist} cm`} onSelect={onSelectPart} />
+          
+          {/* Radar Muscular (Nuevos Hotspots de Energía) */}
+          <Hotspot position={[0, 0.45, -0.15]} type="espalda" label="Espalda" value={`${muscleData.back} series`} color={getColor(muscleData.back)} onSelect={onSelectPart} />
+          <Hotspot position={[0.25, 0.52, 0.0]} type="hombros" label="Hombros" value={`${muscleData.shoulders} series`} color={getColor(muscleData.shoulders)} onSelect={onSelectPart} />
+          <Hotspot position={[-0.3, 0.2, 0.0]} type="brazos" label="Brazos" value={`${muscleData.arms} series`} color={getColor(muscleData.arms)} onSelect={onSelectPart} />
+          <Hotspot position={[0.15, -0.4, 0.1]} type="piernas" label="Piernas" value={`${muscleData.legs} series`} color={getColor(muscleData.legs)} onSelect={onSelectPart} />
         </HologramBody>
 
-        {/* 🎮 Controles — BLOQUEADOS para evitar que el modelo se mueva de lugar */}
-        <OrbitControls
-          enableZoom={false}
-          enablePan={false}
-          enableRotate={false}
-          minPolarAngle={Math.PI / 2}
-          maxPolarAngle={Math.PI / 2}
-        />
-
-        {/* ⚡️ EffectComposer (Bloom) eliminado temporalmente. 
-            El post-procesamiento era la causa del congelamiento del navegador porque 
-            fuerza a la tarjeta gráfica a renderizar la escena múltiples veces por frame. */}
-
-        {/* 🌌 Fondo */}
-        <color attach="background" args={["#0a0f1c"]} />
+        <OrbitControls enableZoom={false} enablePan={false} enableRotate={false} minPolarAngle={Math.PI / 2} maxPolarAngle={Math.PI / 2} />
+        <color attach="background" args={["transparent"]} />
       </Canvas>
     </div>
   );
 }
 
-/* 🔥 Preload del modelo */
 useGLTF.preload("/models/human.glb");
