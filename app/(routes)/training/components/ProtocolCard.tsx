@@ -5,7 +5,7 @@ export default function ProtocolCard({ ex, onRemove }: any) {
     <div className="bg-white dark:bg-[#0f0f11] border border-gray-200 dark:border-white/5 rounded-[1.5rem] p-4 shadow-xl shadow-gray-200/50 dark:shadow-none transition-colors duration-300">
       
       {/* Contenedor de la Imagen con fondo blanco estricto para que mix-blend funcione perfecto */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl w-full h-[140px] mb-4 border border-gray-100 dark:border-gray-700 overflow-hidden flex items-center justify-center shadow-inner relative">
+      <div className="bg-white rounded-xl w-full h-[140px] mb-4 border border-gray-100 dark:border-white/10 overflow-hidden flex items-center justify-center shadow-inner relative">
         {ex.gifUrl ? (
           <img
             src={ex.gifUrl}

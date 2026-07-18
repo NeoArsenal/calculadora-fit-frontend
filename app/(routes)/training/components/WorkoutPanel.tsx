@@ -454,7 +454,7 @@ return (
                         <CommandGroup heading="Ejercicios Disponibles">
                             {exercises.map((ex) => (
                                 <CommandItem key={ex.id} onSelect={() => addAccessory(ex)} className="cursor-pointer flex items-center gap-4 p-3 aria-selected:bg-blue-600/20 data-[selected=true]:bg-secondary/40 transition-colors rounded-xl mb-1">
-                                    <div className="w-24 h-14 bg-white dark:bg-gray-800 rounded-lg overflow-hidden flex-shrink-0 relative border border-gray-200 dark:border-gray-700 shadow-sm flex items-center justify-center">
+                                    <div className="w-24 h-14 bg-white rounded-lg overflow-hidden flex-shrink-0 relative border border-gray-200 dark:border-white/10 shadow-sm flex items-center justify-center">
                                         {ex.gifUrl ? (
                                             <img src={ex.gifUrl} alt={ex.name} loading="lazy" className="w-full h-full object-cover mix-blend-multiply" />
                                         ) : (
