@@ -166,7 +166,6 @@ export default function BodyScanner3D({
         </HologramBody>
 
         <OrbitControls enableZoom={false} enablePan={false} enableRotate={false} minPolarAngle={Math.PI / 2} maxPolarAngle={Math.PI / 2} />
-        <color attach="background" args={["transparent"]} />
       </Canvas>
     </div>
   );

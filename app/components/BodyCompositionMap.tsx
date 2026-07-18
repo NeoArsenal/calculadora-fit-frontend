@@ -83,9 +83,9 @@ export default function BodyCompositionMap({ records, onSelectPart, onRefresh }:
         {/* --- EL MODELO SIMULADO --- */}
         <div className="relative w-full h-[480px] lg:h-[500px] rounded-3xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10 group">
           
-          {/* Fondo Espacial/Cyberpunk con Grid */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a] via-[#020617] to-[#000000] z-0" />
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)] z-0" />
+          {/* Fondo Espacial/Cyberpunk con Grid (Soporte Light/Dark) */}
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-50 via-white to-gray-50 dark:from-[#0f172a] dark:via-[#020617] dark:to-[#000000] z-0" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.05)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)] z-0" />
 
           {/* 🔥 CANVAS 3D */}
           <div className="relative z-10 w-full h-full">
@@ -97,46 +97,46 @@ export default function BodyCompositionMap({ records, onSelectPart, onRefresh }:
           <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 z-20 pointer-events-none" />
 
           {/* UI encima: PESO ACTUAL (Glassmorphism) */}
-          <div className="absolute top-2 md:top-6 right-2 md:right-6 z-30 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(59,130,246,0.15)] flex flex-col items-end transform transition-transform hover:scale-105">
+          <div className="absolute top-2 md:top-6 right-2 md:right-6 z-30 bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-white/10 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(59,130,246,0.15)] flex flex-col items-end transform transition-transform hover:scale-105">
             <div className="flex items-center gap-1 md:gap-2 mb-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-blue-300 uppercase">Peso Actual</p>
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
+              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-blue-600 dark:text-blue-300 uppercase">Peso Actual</p>
             </div>
-            <p className="text-xl md:text-4xl font-black italic text-white tracking-tighter">
-              {weight} <span className="text-xs md:text-sm font-medium text-gray-400">kg</span>
+            <p className="text-xl md:text-4xl font-black italic text-gray-900 dark:text-white tracking-tighter">
+              {weight} <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">kg</span>
             </p>
           </div>
 
           {/* UI encima: GRASA CORPORAL (Glassmorphism) */}
-          <div className="absolute top-2 md:top-6 left-2 md:left-6 z-30 bg-white/5 backdrop-blur-md border border-orange-500/20 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(249,115,22,0.15)] flex flex-col items-start transform transition-transform hover:scale-105">
+          <div className="absolute top-2 md:top-6 left-2 md:left-6 z-30 bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-orange-500/20 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(249,115,22,0.15)] flex flex-col items-start transform transition-transform hover:scale-105">
             <div className="flex items-center gap-1 md:gap-2 mb-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
-              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-orange-400 uppercase">Grasa Corporal</p>
+              <div className="w-1.5 h-1.5 rounded-full bg-orange-500 dark:bg-orange-400 animate-pulse" />
+              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-orange-600 dark:text-orange-400 uppercase">Grasa Corporal</p>
             </div>
-            <p className="text-xl md:text-4xl font-black italic text-white tracking-tighter">
-              {bodyFat} <span className="text-xs md:text-sm font-medium text-gray-400">%</span>
+            <p className="text-xl md:text-4xl font-black italic text-gray-900 dark:text-white tracking-tighter">
+              {bodyFat} <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">%</span>
             </p>
           </div>
 
           {/* UI encima: CINTURA (Glassmorphism) */}
-          <div className="absolute bottom-2 md:bottom-10 left-2 md:left-6 z-30 bg-white/5 backdrop-blur-md border border-emerald-500/20 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(16,185,129,0.15)] flex flex-col items-start transform transition-transform hover:scale-105">
+          <div className="absolute bottom-2 md:bottom-10 left-2 md:left-6 z-30 bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-emerald-500/20 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(16,185,129,0.15)] flex flex-col items-start transform transition-transform hover:scale-105">
             <div className="flex items-center gap-1 md:gap-2 mb-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-emerald-400 uppercase">Cintura</p>
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
+              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-emerald-600 dark:text-emerald-400 uppercase">Cintura</p>
             </div>
-            <p className="text-xl md:text-4xl font-black italic text-white tracking-tighter">
-              {waist} <span className="text-xs md:text-sm font-medium text-gray-400">cm</span>
+            <p className="text-xl md:text-4xl font-black italic text-gray-900 dark:text-white tracking-tighter">
+              {waist} <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">cm</span>
             </p>
           </div>
 
-          {/* UI encima: IMC (Glassmorphism) */}
-          <div className="absolute bottom-2 md:bottom-10 right-2 md:right-6 z-30 bg-white/5 backdrop-blur-md border border-purple-500/20 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(168,85,247,0.15)] flex flex-col items-end transform transition-transform hover:scale-105">
+          {/* UI encima: ÍNDICE IMC (Glassmorphism) */}
+          <div className="absolute bottom-2 md:bottom-10 right-2 md:right-6 z-30 bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-purple-500/20 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(168,85,247,0.15)] flex flex-col items-end transform transition-transform hover:scale-105">
             <div className="flex items-center gap-1 md:gap-2 mb-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-purple-400 uppercase">Índice IMC</p>
+              <div className="w-1.5 h-1.5 rounded-full bg-purple-500 dark:bg-purple-400 animate-pulse" />
+              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-purple-600 dark:text-purple-400 uppercase">Índice IMC</p>
             </div>
-            <p className="text-xl md:text-4xl font-black italic text-white tracking-tighter">
-              {bmi} <span className="text-xs md:text-sm font-medium text-gray-400">pts</span>
+            <p className="text-xl md:text-4xl font-black italic text-gray-900 dark:text-white tracking-tighter">
+              {bmi} <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">pts</span>
             </p>
           </div>
         </div>
