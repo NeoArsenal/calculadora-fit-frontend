@@ -284,12 +284,12 @@ export default function AnalyticsPage() {
 
       {/* SECCIÓN INFERIOR: Workout Consistency (Heatmap) */}
       <section className="bg-card dark:bg-[#111827] border border-border/50 rounded-2xl p-6 shadow-lg">
-        <div className="flex justify-between items-start mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h2 className="text-lg font-bold text-foreground">Consistencia de Entrenamiento</h2>
             <p className="text-xs text-muted-foreground uppercase tracking-widest mt-1">Frecuencia de Sesiones por Semana</p>
           </div>
-          <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-bold uppercase tracking-widest bg-gray-100 dark:bg-white/5 px-3 py-1.5 rounded-full">
             Intensidad: 
             <div className="flex gap-1 ml-2">
               <div className="w-[14px] h-[14px] rounded-[4px] bg-gray-200 dark:bg-white/5"></div>
