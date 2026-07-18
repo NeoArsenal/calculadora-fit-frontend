@@ -148,7 +148,7 @@ export default function TrainingPage() {
                     <div className="md:col-span-12">
                         <div className="flex items-center gap-2 mb-4">
                             <Bookmark className="text-blue-500" size={20} />
-                            <h2 className="text-lg font-black uppercase tracking-widest text-gray-900 dark:text-white transition-colors">Tus Plantillas</h2>
+                            <h2 className="text-lg font-bold tracking-tight text-gray-900 dark:text-white transition-colors">Tus Plantillas</h2>
                         </div>
                         
                         {routines && routines.length > 0 ? (
@@ -157,7 +157,7 @@ export default function TrainingPage() {
                                     <button 
                                         key={routine.id}
                                         onClick={() => startRoutine(routine)}
-                                        className="bg-white dark:bg-[#0a0a0b] hover:bg-gray-50 dark:hover:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-blue-500/30 p-5 rounded-[2rem] text-left transition-all shadow-xl shadow-gray-200/50 dark:shadow-none group relative overflow-hidden flex flex-col justify-between min-h-[140px]"
+                                        className="bg-white dark:bg-[#0f172a]/80 backdrop-blur-md border border-gray-200 dark:border-white/5 hover:border-blue-500/30 p-5 rounded-[2rem] text-left transition-all shadow-xl shadow-gray-200/50 dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] group relative overflow-hidden flex flex-col justify-between min-h-[140px]"
                                     >
                                         <div className="absolute top-0 left-0 w-1 h-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                         
@@ -167,7 +167,7 @@ export default function TrainingPage() {
                                                     type="text" 
                                                     value={editName} 
                                                     onChange={(e) => setEditName(e.target.value)}
-                                                    className="w-full bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white font-black italic uppercase text-xl mb-1 px-3 py-1 rounded-lg outline-none border border-blue-500/50"
+                                                    className="w-full bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white font-bold text-xl mb-1 px-3 py-1 rounded-lg outline-none border border-blue-500/50"
                                                     autoFocus
                                                 />
                                                 <div className="flex items-center gap-2 mt-3">
@@ -188,7 +188,7 @@ export default function TrainingPage() {
                                         ) : (
                                             <div className="w-full relative z-10">
                                                 <div className="flex justify-between items-start">
-                                                    <h3 className="text-gray-900 dark:text-white font-black italic uppercase text-xl mb-1 transition-colors pr-8 leading-tight">{routine.name}</h3>
+                                                    <h3 className="text-gray-900 dark:text-white font-bold text-xl mb-1 transition-colors pr-8 leading-tight">{routine.name}</h3>
                                                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 top-0">
                                                         <div 
                                                             onClick={(e) => handleEditClick(e, routine)}

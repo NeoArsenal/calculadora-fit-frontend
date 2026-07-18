@@ -36,15 +36,15 @@ export default function RoutinePlanner({ sessions }: Props) {
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
       
       {/* --- COLUMNA CALENDARIO (8/12) --- */}
-      <div className="lg:col-span-8 bg-white dark:bg-[#0f0f11] shadow-2xl shadow-gray-200/50 dark:shadow-none border border-gray-200 dark:border-white/5 rounded-[2.5rem] p-8 transition-colors duration-300">
+      <div className="lg:col-span-8 bg-white dark:bg-[#0f172a]/80 backdrop-blur-md shadow-2xl shadow-gray-200/50 dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-200 dark:border-white/5 rounded-[2.5rem] p-8 transition-colors duration-300">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20">
+            <div className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20 shadow-inner">
               <CalendarIcon className="text-blue-500" size={20} />
             </div>
             <div>
-              <h2 className="text-gray-900 dark:text-white text-xl font-black italic uppercase tracking-tighter transition-colors">
-                Kallp: Logbook<span className="text-blue-500">_</span>
+              <h2 className="text-gray-900 dark:text-white text-xl font-bold tracking-tight transition-colors">
+                Logbook Kallp<span className="text-blue-500">_</span>
               </h2>
               <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Historial de entrenamientos</p>
             </div>
@@ -78,7 +78,7 @@ export default function RoutinePlanner({ sessions }: Props) {
                 className={`group relative h-16 rounded-2xl text-sm font-bold transition-all duration-300 flex flex-col items-center justify-center gap-1
                   ${hasWorkout 
                     ? "bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] scale-100 hover:scale-105 border border-blue-500/50" 
-                    : "bg-gray-100 dark:bg-secondary/20 text-gray-500 dark:text-muted-foreground hover:bg-gray-200 dark:hover:bg-secondary/40 border border-gray-200 dark:border-white/5"}
+                    : "bg-transparent text-gray-500 dark:text-muted-foreground hover:bg-gray-100 dark:hover:bg-white/5 border border-transparent hover:border-gray-200 dark:hover:border-white/10"}
                   ${isToday && !hasWorkout ? "border-2 border-blue-500/50 animate-pulse bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400" : ""}
                 `}
               >
@@ -99,12 +99,12 @@ export default function RoutinePlanner({ sessions }: Props) {
 
       {/* --- COLUMNA DETALLES (4/12) --- */}
       <div className="lg:col-span-4 space-y-4">
-        <div className="bg-white dark:bg-[#0f0f11] shadow-2xl shadow-gray-200/50 dark:shadow-none border border-gray-200 dark:border-white/5 rounded-[2.5rem] p-6 h-full flex flex-col justify-start min-h-[300px] transition-colors duration-300">
+        <div className="bg-white dark:bg-[#0f172a]/80 backdrop-blur-md shadow-2xl shadow-gray-200/50 dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-200 dark:border-white/5 rounded-[2.5rem] p-6 h-full flex flex-col justify-start min-h-[300px] transition-colors duration-300">
           {selectedSessions.length > 0 ? (
             <div className="animate-in fade-in slide-in-from-right duration-500">
               <div className="flex items-center gap-2 mb-6 text-blue-500 border-b border-gray-200 dark:border-white/5 pb-4 transition-colors">
                 <ClipboardList size={20} />
-                <h3 className="font-black italic uppercase text-sm tracking-widest text-gray-900 dark:text-white transition-colors">Resumen de Sesión</h3>
+                <h3 className="font-bold text-sm tracking-tight text-gray-900 dark:text-white transition-colors">Resumen de Sesión</h3>
               </div>
 
               <div className="space-y-6 overflow-y-auto max-h-[350px] custom-scrollbar pr-2">
