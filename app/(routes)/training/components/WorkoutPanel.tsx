@@ -285,7 +285,7 @@ export default function WorkoutPanel({ onFinish, onBack, initialRoutine = null }
 
 return (
         <div 
-            className="space-y-6 flex flex-col h-full touch-pan-y"
+            className="fixed inset-0 z-[100] bg-background overflow-y-auto pt-6 md:pt-10 px-4 md:px-8 pb-[120px] overscroll-none animate-in slide-in-from-bottom-5 duration-300"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -430,19 +430,19 @@ return (
                             Rutina Vacía
                         </h3>
                         <p className="text-xs text-gray-500 dark:text-muted-foreground max-w-[250px] mx-auto leading-relaxed font-medium">
-                            Aún no tienes ejercicios en este protocolo. Haz clic en "Agregar Accesorio" para empezar a construir tu entrenamiento de hoy.
+                            Aún no tienes ejercicios en este protocolo. Haz clic en "Agregar Ejercicio" para empezar a construir tu entrenamiento de hoy.
                         </p>
                     </div>
                 )}
             </div>
 
-            {/* 2. BOTÓN AGREGAR ACCESORIO */}
+            {/* 2. BOTÓN AGREGAR EJERCICIO */}
             <button
                 onClick={() => setOpen(true)}
                 disabled={isSaving}
                 className="w-full bg-white dark:bg-secondary/20 hover:bg-gray-50 dark:hover:bg-secondary/40 border border-gray-200 dark:border-border text-gray-600 dark:text-muted-foreground py-4 rounded-[1.5rem] flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest transition-all shadow-sm disabled:opacity-50"
             >
-                <Plus size={16} /> Agregar Accesorio
+                <Plus size={16} /> Agregar Ejercicio
             </button>
 
             {/* 3. EL BUSCADOR (Igual que antes) */}
@@ -473,7 +473,7 @@ return (
             </CommandDialog>
 
             {/* 4. BOTONES FINALES (Fijados al fondo) */}
-            <div className="fixed bottom-[80px] left-0 right-0 p-4 bg-background/95 backdrop-blur-xl z-40 flex gap-3 border-t border-gray-200 dark:border-white/10 rounded-t-[2rem]">
+            <div className="fixed bottom-0 left-0 right-0 p-4 pb-8 bg-background/95 backdrop-blur-xl z-[110] flex gap-3 border-t border-gray-200 dark:border-white/10 rounded-t-[2rem]">
                 <button 
                     onClick={promptSaveTemplate}
                     disabled={isSaving || isSavingTemplate}
