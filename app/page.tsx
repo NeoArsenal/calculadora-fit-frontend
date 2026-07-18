@@ -30,7 +30,7 @@ export default function DashboardPage() {
     return (
       <main className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-4">
         <div className="text-center space-y-6 max-w-md animate-in zoom-in duration-500">
-          <h1 className="text-4xl font-black italic uppercase text-gray-900 dark:text-white">
+          <h1 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white">
             Kallp<span className="text-blue-500">:</span>
           </h1>
           <div className="bg-white dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800 p-8 rounded-2xl shadow-2xl backdrop-blur-md transition-colors duration-300">
@@ -59,7 +59,7 @@ export default function DashboardPage() {
         {/* HEADER: Kallp: Brand */}
         <header className="flex justify-between items-end border-b border-border pb-6">
           <div>
-            <h1 className="text-4xl font-black tracking-tighter italic uppercase">
+            <h1 className="text-4xl font-black tracking-tighter">
               Kallp<span className="text-blue-500">:</span>
             </h1>
             <p className="text-[10px] text-muted-foreground font-bold tracking-[0.3em] uppercase mt-1">

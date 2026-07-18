@@ -300,8 +300,8 @@ return (
                             <ChevronLeft size={24} />
                         </button>
                     )}
-                    <h2 className="text-gray-900 dark:text-white font-black italic uppercase text-3xl md:text-4xl tracking-tighter transition-colors">
-                        {initialRoutine ? initialRoutine.name : "RUTINA LIBRE"}<span className="text-blue-500">_</span>
+                    <h2 className="text-gray-900 dark:text-white font-black text-3xl md:text-4xl tracking-tighter transition-colors">
+                        {initialRoutine ? initialRoutine.name : "Rutina Libre"}<span className="text-blue-500">_</span>
                     </h2>
                 </div>
             </div>

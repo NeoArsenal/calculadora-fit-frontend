@@ -109,7 +109,7 @@ export default function NutritionDashboard() {
       {/* HEADER */}
       <header className="flex justify-between items-end">
         <div>
-          <h1 className="text-4xl font-black italic text-gray-900 dark:text-white uppercase tracking-tighter transition-colors">
+          <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tighter transition-colors">
             Ingesta Diaria<span className="text-blue-500">.</span>
           </h1>
           <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-1">Rendimiento Nutricional Élite</p>

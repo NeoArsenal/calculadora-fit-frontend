@@ -109,8 +109,8 @@ export default function TrainingPage() {
             {/* Cabecera Global del Módulo de Entrenamiento */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pt-4 md:pt-0">
                 <div>
-                    <h1 className="text-4xl md:text-5xl font-black italic text-gray-900 dark:text-white uppercase tracking-tighter transition-colors">
-                        ENTRENAMIENTO<span className="text-blue-500">_</span>
+                    <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tighter transition-colors">
+                        Entrenamiento<span className="text-blue-500">_</span>
                     </h1>
                     <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">
                         Control de Sesiones y Progreso

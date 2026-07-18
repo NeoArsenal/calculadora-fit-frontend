@@ -96,9 +96,9 @@ export default function SettingsPage() {
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter text-gray-900 dark:text-white flex items-center gap-3 transition-colors">
+          <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-gray-900 dark:text-white flex items-center gap-3 transition-colors">
             <Settings2 className="text-blue-500 w-10 h-10 md:w-12 md:h-12" />
-            PERFIL Y AJUSTES_
+            Perfil y Ajustes_
           </h1>
           <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-1">Configuración del Ecosistema Kallp</p>
         </div>
