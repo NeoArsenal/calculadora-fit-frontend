@@ -148,10 +148,28 @@ export const addWater = async (userId: number, amountMl: number) => {
 
 // 💊 SUPLEMENTOS: Obtener lista
 export const getSupplements = async () => {
-  // Nota: Actualmente el endpoint backend no filtra por userId, devuelve todos.
-  const response = await fetch(`${BASE_URL}/supplements`, { headers: getAuthHeaders(false) });
+  const response = await fetch(`${BASE_URL}/supplements`, { headers: getAuthHeaders() });
   if (!response.ok) throw new Error('Error al obtener suplementos');
   return response.json();
+};
+
+export const addSupplement = async (data: any) => {
+  const response = await fetch(`${BASE_URL}/supplements`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) throw new Error('Error al añadir suplemento');
+  return response.json();
+};
+
+export const deleteSupplement = async (id: number) => {
+  const response = await fetch(`${BASE_URL}/supplements/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(false)
+  });
+  if (!response.ok) throw new Error('Error al eliminar suplemento');
+  return true;
 };
 
 // 💊 SUPLEMENTOS: Consumir dosis

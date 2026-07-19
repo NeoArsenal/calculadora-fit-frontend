@@ -202,6 +202,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshSupplements = useCallback(async () => {
+    try {
+      const data = await api.getSupplements();
+      setSupplements(data);
+    } catch (e) {
+      console.error('Error refreshing supplements', e);
+    }
+  }, []);
+
   return (
     <AppContext.Provider value={{
       userProfile,
@@ -215,6 +224,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       routines,
       loading: loading || authLoading,
       refreshEcosystem: loadEcosystem,
+      refreshSupplements,
       gainXp,
       CURRENT_USER_ID,
       isAuthenticated,

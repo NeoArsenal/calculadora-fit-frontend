@@ -7,7 +7,10 @@ import MealScanner from "./components/MealScanner";
 import ConfirmMealModal from "./components/ConfirmMealModal"; 
 import { saveMeal, getDashboardSummary, MealData } from "./services/nutritionService"; 
 import HydrationWidget from "@/app/components/HydrationWidget";
-import { consumeSupplement } from "@/services/api";
+import { consumeSupplement, deleteSupplement } from "@/services/api";
+import SupplementManagerModal from "./components/SupplementManagerModal";
+import { Settings, Trash2, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 
 interface DailyMacros {
   calories: number;
@@ -253,19 +256,63 @@ function MealItem({ name, kcal, p, time, color }: MealItemData) {
 
 
 function PerformanceStack() {
-  const { supplements, refreshEcosystem } = useApp();
+  const { supplements, refreshEcosystem, refreshSupplements, gainXp, CURRENT_USER_ID } = useApp() as any;
   const [loadingId, setLoadingId] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
-  const handleConsume = async (id: number) => {
+  const handleConsume = async (sup: any) => {
     try {
-      setLoadingId(id);
-      await consumeSupplement(id);
+      setLoadingId(sup.id);
+      await consumeSupplement(sup.id);
+      
+      if (sup.calories && sup.calories > 0 && CURRENT_USER_ID) {
+          const mealData: MealData = {
+              name: `${sup.name} (${sup.doseDescription || 'Suplemento'})`,
+              calories: sup.calories,
+              protein: sup.protein || 0,
+              carbs: sup.carbs || 0,
+              fat: sup.fats || 0
+          };
+          await saveMeal(CURRENT_USER_ID, mealData);
+      }
+
+      await gainXp(5, "Suplemento Consumido");
       await refreshEcosystem();
+      toast.success(`✅ ${sup.name} registrado correctamente`);
     } catch (e) {
       console.error(e);
-      alert("Error al consumir el suplemento");
+      toast.error("No se pudo registrar el suplemento. Intenta de nuevo.");
     } finally {
       setLoadingId(null);
+    }
+  };
+
+  const handleDeleteRequest = (id: number, completed: boolean) => {
+    if (completed) {
+      toast.warning(
+        <div className="flex flex-col gap-1">
+          <span className="font-bold text-sm">Ya contabilizado hoy</span>
+          <span className="text-xs opacity-80">Este suplemento ya fue consumido hoy. Puedes eliminarlo mañana cuando se reinicie el ciclo.</span>
+        </div>,
+        { duration: 4000 }
+      );
+      return;
+    }
+    setDeleteConfirm(id);
+  };
+
+  const handleDeleteConfirmed = async () => {
+    if (deleteConfirm === null) return;
+    const id = deleteConfirm;
+    setDeleteConfirm(null);
+    try {
+        await deleteSupplement(id);
+        await refreshSupplements();
+        toast.success("🗑️ Suplemento eliminado del Stack");
+    } catch (e) {
+        console.error(e);
+        toast.error("No se pudo eliminar. Si fue consumido hoy, intenta mañana.");
     }
   };
 
@@ -274,7 +321,12 @@ function PerformanceStack() {
 
   return (
     <div className="bg-white dark:bg-[#0f0f11] shadow-2xl shadow-gray-200/50 dark:shadow-none border border-gray-200 dark:border-white/5 rounded-[2.5rem] p-8 transition-colors duration-300">
-        <h3 className="text-gray-900 dark:text-white font-black italic uppercase text-sm mb-6 tracking-widest transition-colors">Performance Stack_</h3>
+        <div className="flex items-center justify-between mb-6">
+           <h3 className="text-gray-900 dark:text-white font-black italic uppercase text-sm tracking-widest transition-colors">Performance Stack_</h3>
+           <button onClick={() => setIsModalOpen(true)} className="p-2 bg-gray-100 dark:bg-white/5 rounded-full hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
+              <Settings size={14} className="text-gray-600 dark:text-gray-400" />
+           </button>
+        </div>
         <div className="space-y-3">
             {supplements && supplements.filter((s: any) => s.servingSizeGrams != null).length > 0 ? (
                 supplements.filter((s: any) => s.servingSizeGrams != null).sort((a: any, b: any) => a.id - b.id).map((sup: any) => {
@@ -286,12 +338,18 @@ function PerformanceStack() {
                             dose={sup.doseDescription || `${sup.servingSizeGrams}G`} 
                             completed={isCompletedToday} 
                             loading={loadingId === sup.id}
-                            onClick={() => !isCompletedToday && handleConsume(sup.id)}
+                            onClick={() => !isCompletedToday && handleConsume(sup)}
+                            onDelete={() => handleDeleteRequest(sup.id, isCompletedToday)}
                         />
                     )
                 })
             ) : (
-                <p className="text-xs text-muted-foreground italic">Sin suplementos configurados.</p>
+                <div className="text-center py-6">
+                    <p className="text-xs text-muted-foreground italic mb-3">Sin suplementos configurados.</p>
+                    <button onClick={() => setIsModalOpen(true)} className="text-[10px] font-bold bg-blue-500/10 text-blue-500 px-4 py-2 rounded-full uppercase tracking-widest hover:bg-blue-500/20 transition-colors">
+                       Configurar Stack
+                    </button>
+                </div>
             )}
         </div>
         <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-600/5 border border-blue-200 dark:border-blue-500/10 rounded-3xl transition-colors">
@@ -301,6 +359,41 @@ function PerformanceStack() {
             </div>
             <p className="text-[10px] text-muted-foreground italic leading-relaxed">Objetivos de proteína en camino. Umbral de leucina alcanzado.</p>
         </div>
+
+        <SupplementManagerModal 
+            isOpen={isModalOpen} 
+            onClose={() => setIsModalOpen(false)} 
+            onSuccess={async () => { await refreshSupplements(); }} 
+        />
+
+        {/* Diálogo de confirmación de borrado */}
+        {deleteConfirm !== null && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                <div className="w-full max-w-sm bg-white dark:bg-[#18181b] border border-gray-200 dark:border-white/10 rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-2xl bg-red-100 dark:bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                            <AlertTriangle size={18} className="text-red-500" />
+                        </div>
+                        <div>
+                            <p className="font-black text-sm text-gray-900 dark:text-white uppercase tracking-wide">Eliminar Suplemento</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Esta acción no se puede deshacer</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setDeleteConfirm(null)}
+                            className="flex-1 py-3 px-4 rounded-2xl border border-gray-200 dark:border-white/10 text-xs font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors uppercase tracking-widest">
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleDeleteConfirmed}
+                            className="flex-1 py-3 px-4 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition-colors uppercase tracking-widest">
+                            Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
     </div>
   );
 }
@@ -310,25 +403,47 @@ interface StackItemProps {
   dose: string;
   completed: boolean;
   onClick?: () => void;
+  onDelete?: () => void;
   loading?: boolean;
 }
 
-function StackItem({ name, dose, completed, onClick, loading }: StackItemProps) {
+function StackItem({ name, dose, completed, onClick, onDelete, loading }: StackItemProps) {
     return (
-        <div 
-          onClick={onClick}
-          className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${!completed ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5' : ''} ${completed ? 'bg-blue-50 dark:bg-blue-600/5 border-blue-200 dark:border-blue-500/20' : 'bg-transparent border-gray-200 dark:border-white/5 opacity-60 dark:opacity-40'}`}>
-            <div className="flex flex-col">
-              <span className="text-xs font-black italic uppercase text-gray-900 dark:text-white transition-colors">{name}</span>
-              <span className="text-[8px] text-muted-foreground uppercase">{dose}</span>
+        <div className="flex items-center gap-2">
+            <div 
+              onClick={!completed ? onClick : undefined}
+              className={`flex-1 flex items-center justify-between p-4 rounded-2xl border transition-all 
+                ${completed 
+                  ? 'bg-blue-50 dark:bg-blue-600/5 border-blue-200 dark:border-blue-500/20' 
+                  : 'bg-transparent border-gray-200 dark:border-white/5 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5'
+                }`}>
+                <div className="flex flex-col gap-0.5">
+                  <span className={`text-xs font-black italic uppercase transition-colors ${
+                    completed ? 'text-blue-500 dark:text-blue-400' : 'text-gray-900 dark:text-white'
+                  }`}>{name}</span>
+                  <span className={`text-[8px] uppercase tracking-widest ${
+                    completed ? 'text-blue-400/60' : 'text-muted-foreground'
+                  }`}>{dose}</span>
+                </div>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                  completed ? 'bg-blue-600 text-white' : 'border border-gray-300 dark:border-white/20'
+                }`}>
+                  {loading ? (
+                    <div className="w-3 h-3 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                  ) : completed ? (
+                    <Check size={12}/>
+                  ) : (
+                    <span className="text-[8px] text-gray-400">▶</span>
+                  )}
+                </div>
             </div>
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${completed ? 'bg-blue-600 text-white' : 'border border-gray-300 dark:border-white/20'}`}>
-              {loading ? (
-                <div className="w-3 h-3 border-2 border-t-transparent border-white rounded-full animate-spin" />
-              ) : completed ? (
-                <Check size={12}/>
-              ) : null}
-            </div>
+            {/* Botón borrar - siempre visible */}
+            <button 
+              onClick={onDelete} 
+              title="Eliminar del stack"
+              className="p-2 rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 transition-all flex-shrink-0">
+                <Trash2 size={14} />
+            </button>
         </div>
     );
 }
