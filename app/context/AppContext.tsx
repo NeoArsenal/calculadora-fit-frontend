@@ -33,6 +33,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [nutritionSummary, setNutritionSummary] = useState<any>(null);
   const [supplements, setSupplements] = useState<any[]>([]);
   const [supplementLogs, setSupplementLogs] = useState<any[]>([]);
+  const [hydration, setHydration] = useState<any>({ amountMl: 0 });
 
   const [loading, setLoading] = useState(true);
 
@@ -88,7 +89,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         nutriSummary,
         supplementsData,
         logsData,
-        routinesData
+        routinesData,
+        hydrationData
       ] = await Promise.all([
         api.getUserProfile(CURRENT_USER_ID).catch(() => null),
         api.getRecords(CURRENT_USER_ID).catch(() => []),
@@ -99,7 +101,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         getDashboardSummary(CURRENT_USER_ID).catch(() => null),
         api.getSupplements().catch(() => []),
         api.getSupplementLogs(CURRENT_USER_ID).catch(() => []),
-        api.getRoutines().catch(() => [])
+        api.getRoutines().catch(() => []),
+        api.getTodayWater(CURRENT_USER_ID).catch(() => ({ amountMl: 0 }))
       ]);
 
       setUserProfile(profileData);
@@ -139,6 +142,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setSupplements(supplementsData);
       setSupplementLogs(logsData);
       setRoutines(routinesData);
+      setHydration(hydrationData);
     } catch (e) {
       console.error("Error loading ecosystem", e);
       if (e instanceof Error && e.message.includes('401')) {
@@ -161,6 +165,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       router.push('/login');
     }
   }, [isAuthenticated, authLoading, pathname, router]);
+
+  const logWater = async (amount: number) => {
+    if (!CURRENT_USER_ID) return Promise.reject("No user");
+    
+    // Optimistic update
+    const previousMl = hydration?.amountMl || 0;
+    setHydration({ amountMl: previousMl + amount });
+    
+    try {
+      const updated = await api.addWater(CURRENT_USER_ID, amount);
+      setHydration({ amountMl: updated.amountMl });
+      gainXp(5);
+      return updated;
+    } catch (e) {
+      setHydration({ amountMl: previousMl }); // revert
+      throw e;
+    }
+  };
 
   const gainXp = async (amount: number) => {
     if (!CURRENT_USER_ID) return;
@@ -222,10 +244,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       supplements,
       supplementLogs,
       routines,
+      hydration,
       loading: loading || authLoading,
       refreshEcosystem: loadEcosystem,
       refreshSupplements,
       gainXp,
+      logWater,
       CURRENT_USER_ID,
       isAuthenticated,
       login,

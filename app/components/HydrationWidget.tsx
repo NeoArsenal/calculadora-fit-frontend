@@ -1,51 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Droplet, Plus, GlassWater } from "lucide-react";
 import { toast } from "sonner";
-import { getTodayWater, addWater } from "@/services/api";
 import { useApp } from "@/app/context/AppContext";
 
 export default function HydrationWidget({ dailyGoalMl = 3000 }: { dailyGoalMl?: number }) {
-  const { gainXp, CURRENT_USER_ID } = useApp();
+  const { hydration, logWater, loading } = useApp();
   
-  const [currentMl, setCurrentMl] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchWater = async () => {
-      if (!CURRENT_USER_ID) { setLoading(false); return; }
-      try {
-        const data = await getTodayWater(CURRENT_USER_ID);
-        setCurrentMl(data?.amountMl || 0);
-      } catch (error) {
-        // Silencioso para usuarios nuevos sin datos de hidratación
-        console.warn("Hydration data unavailable (normal for new users)");
-        setCurrentMl(0);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchWater();
-  }, [CURRENT_USER_ID]);
+  const currentMl = hydration?.amountMl || 0;
 
   const handleAddWater = async (amount: number) => {
-    const previousMl = currentMl;
-    const newMl = Math.min(previousMl + amount, dailyGoalMl * 2); // Un límite seguro
-    setCurrentMl(newMl); // Optimistic UI update
-
-    const promise = addWater(CURRENT_USER_ID, amount);
+    const promise = logWater(amount);
 
     toast.promise(promise, {
       loading: 'Registrando hidratación...',
-      success: () => {
-        gainXp(5);
-        return `+${amount}ml registrados correctamente 💧`;
-      },
-      error: () => {
-        setCurrentMl(previousMl); // Revert on error
-        return 'No se pudo registrar el agua';
-      }
+      success: () => `+${amount}ml registrados correctamente 💧`,
+      error: () => 'No se pudo registrar el agua'
     });
   };
 
