@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useApp } from '@/app/context/AppContext';
 import SummaryCards from './components/SummaryCards';
 import HistoryTable from './components/HistoryTable';
@@ -9,104 +10,196 @@ import BodyCompositionMap from './components/BodyCompositionMap';
 import RecordForm from './components/RecordForm';
 import FitAICoach from './components/FitAICoach';
 import { DashboardSkeleton } from "./components/DashboardSkeleton";
-import GamifiedWellness from './components/GamifiedWellness';
-import MiniHydrationWidget from './components/MiniHydrationWidget';
 import { ThemeToggle } from './components/ThemeToggle';
+import { 
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription 
+} from "@/components/ui/dialog";
+import { 
+  Plus, Dumbbell, Apple, User, TrendingUp, History, Flame 
+} from "lucide-react";
 
 export default function DashboardPage() {
-  // 🎯 ESTADO DE INTEGRACIÓN: Controla qué parte del cuerpo está bajo la lupa
   const [activeFocus, setActiveFocus] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'scanner' | 'chart' | 'history'>('scanner');
+  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
 
-  // Consumimos la lógica desde tu Contexto Global
-  const { userProfile, records, nutrition, loading, refreshEcosystem } = useApp();
+  const { userProfile, records, nutrition, trainingSessions, loading, refreshEcosystem } = useApp();
 
-  // Perfil por defecto en caso de que aún no exista en el backend
   const profileToUse = userProfile || { heightCm: 179, age: 25 };
   const heightMeters = (profileToUse.heightCm || 179) / 100;
-
   const safeRecords = records || [];
 
   if (loading && safeRecords.length === 0 && !userProfile) return <DashboardSkeleton />;
 
-  // CÁLCULOS PARA LA IA
+  const userName = (userProfile as any)?.name || (userProfile as any)?.username || "Atleta";
   const currentWeight = safeRecords[0]?.weightKg || (profileToUse as any)?.currentWeightKg || (profileToUse as any)?.targetWeightKg || 0;
   const bmiValue = currentWeight > 0 ? (currentWeight / Math.pow(heightMeters, 2)) : 0;
   const targetKcal = nutrition?.targetCalories || 2890;
-  const hydrationTarget = nutrition?.hydrationTargetMl || 3000;
+  const totalWorkouts = trainingSessions?.length || 0;
 
-  // RENDERIZADO DEL DASHBOARD COMPLETO
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 selection:bg-blue-500/30">
+    <div className="space-y-6 pb-10 animate-in fade-in duration-500 selection:bg-blue-500/30">
 
-      {/* HEADER: Kallp: Brand */}
-      <header className="flex justify-between items-end border-b border-white/10 pb-6">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
-              <span className="text-white font-black text-xl">K</span>
+      {/* 1. CABECERA DE CENTRO DE MANDO + ACCIONES RÁPIDAS */}
+      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-border dark:border-white/10 pb-5">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
+                Hola, {userName}
+              </h1>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 dark:text-orange-400 text-[11px] font-bold">
+                <Flame size={12} className="fill-current" /> {totalWorkouts} sesiones
+              </span>
             </div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-foreground">
-              Kallp<span className="text-blue-500">:</span>
-            </h1>
-          </div>
-          <p className="text-[10px] text-muted-foreground font-bold tracking-[0.25em] uppercase mt-2">
-            SISTEMA DE OPTIMIZACIÓN BIOPSICOLÓGICA | KALLP UI 2.0
-          </p>
-        </div>
-        
-        <div className="text-right hidden md:flex flex-col items-end gap-2">
-          <p className="text-xs text-muted-foreground font-medium italic">Chorrillos, Lima</p>
-          <div className="flex items-center gap-4">
-            <p className="text-xs text-blue-400 font-bold tracking-widest uppercase bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
-              {new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' })}
+            <p className="text-xs text-muted-foreground font-medium mt-1 capitalize">
+              {new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
+          </div>
+
+          {/* Botón de tema visible también en móvil */}
+          <div className="lg:hidden">
+            <ThemeToggle />
+          </div>
+        </div>
+
+        {/* Barra de Acciones Rápidas de 1 Toque */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => setIsRecordModalOpen(true)}
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/25 transition-all active:scale-95"
+          >
+            <Plus size={16} strokeWidth={2.5} />
+            Registrar Pesaje
+          </button>
+
+          <Link
+            href="/training"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-card dark:bg-[#121214] hover:bg-accent border border-border dark:border-white/10 text-foreground text-xs font-bold transition-all active:scale-95"
+          >
+            <Dumbbell size={15} className="text-blue-500" />
+            Entrenar
+          </Link>
+
+          <Link
+            href="/nutrition"
+            className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-card dark:bg-[#121214] hover:bg-accent border border-border dark:border-white/10 text-foreground text-xs font-bold transition-all active:scale-95"
+          >
+            <Apple size={15} className="text-emerald-500" />
+            <span className="hidden sm:inline">Nutrición</span>
+          </Link>
+
+          <div className="hidden lg:block pl-1">
             <ThemeToggle />
           </div>
         </div>
       </header>
 
-      {/* 1. MÉTRICAS SUPERIORES */}
+      {/* 2. BENTO GRID DE 3 TARJETAS ESENCIALES */}
       <SummaryCards
         nutrition={nutrition}
         records={records}
         userProfile={profileToUse}
+        onOpenRecordModal={() => setIsRecordModalOpen(true)}
       />
 
-      {/* 2. PANEL CENTRAL: Grid 12 columnas */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* COLUMNA DE CONTROL */}
-        <div className="lg:col-span-4 flex flex-col gap-6 order-2 lg:order-1">
-          <GamifiedWellness />
-          <MiniHydrationWidget dailyGoalMl={hydrationTarget} />
-          <RecordForm onSuccess={refreshEcosystem} />
+      {/* 3. PANEL BIOMÉTRICO UNIFICADO CON PESTAÑAS (ESCÁNER 3D | EVOLUCIÓN | HISTORIAL) */}
+      <section className="bg-card dark:bg-[#121214] border border-border dark:border-white/10 rounded-3xl p-4 md:p-6 shadow-sm">
+        {/* Selector de Pestañas (Segmented Control) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 mb-5 border-b border-border dark:border-white/10">
+          <div className="grid grid-cols-3 sm:flex items-center bg-muted dark:bg-black/40 p-1 rounded-2xl border border-border dark:border-white/5 w-full sm:w-auto">
+            <button
+              onClick={() => setActiveTab('scanner')}
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'scanner'
+                  ? 'bg-card dark:bg-[#1c1c20] text-blue-600 dark:text-blue-400 shadow-sm border border-border/60 dark:border-white/10'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <User size={14} />
+              <span>Escáner 3D</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('chart')}
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'chart'
+                  ? 'bg-card dark:bg-[#1c1c20] text-blue-600 dark:text-blue-400 shadow-sm border border-border/60 dark:border-white/10'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <TrendingUp size={14} />
+              <span>Evolución</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'history'
+                  ? 'bg-card dark:bg-[#1c1c20] text-blue-600 dark:text-blue-400 shadow-sm border border-border/60 dark:border-white/10'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <History size={14} />
+              <span>Historial</span>
+            </button>
+          </div>
+
+          <span className="hidden sm:inline-block text-[11px] font-medium text-muted-foreground">
+            {activeTab === 'scanner' && "Modelo interactivo en tiempo real"}
+            {activeTab === 'chart' && "Tendencia histórica de peso y cintura"}
+            {activeTab === 'history' && `${safeRecords.length} mediciones registradas`}
+          </span>
         </div>
 
-        {/* COLUMNA DEL MAPA 3D */}
-        <div className="lg:col-span-8 order-1 lg:order-2">
-          <BodyCompositionMap
-            records={records}
-            onSelectPart={setActiveFocus}
-            onRefresh={refreshEcosystem}
-          />
-        </div>
-        
-      </div>
+        {/* Contenido dinámico de la pestaña activa */}
+        <div className="animate-in fade-in duration-300">
+          {activeTab === 'scanner' && (
+            <BodyCompositionMap
+              records={records}
+              onSelectPart={setActiveFocus}
+              onRefresh={refreshEcosystem}
+            />
+          )}
 
-      {/* 3. ANÁLISIS EVOLUTIVO & HISTORIAL */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-4 items-start">
-        <div className="lg:col-span-7">
-          <ProgressChart records={records} />
-        </div>
-        <div className="lg:col-span-5">
-          <HistoryTable
-            records={records}
-            onDeleteSuccess={refreshEcosystem}
-          />
+          {activeTab === 'chart' && (
+            <ProgressChart 
+              records={records} 
+              onOpenRecordModal={() => setIsRecordModalOpen(true)}
+            />
+          )}
+
+          {activeTab === 'history' && (
+            <HistoryTable
+              records={records}
+              onDeleteSuccess={refreshEcosystem}
+              onOpenRecordModal={() => setIsRecordModalOpen(true)}
+            />
+          )}
         </div>
       </section>
 
-      {/* 4. ASISTENTE FLOTANTE */}
+      {/* 4. MODAL PARA REGISTRAR PESO Y CINTURA BAJO DEMANDA */}
+      <Dialog open={isRecordModalOpen} onOpenChange={setIsRecordModalOpen}>
+        <DialogContent className="sm:max-w-md bg-card dark:bg-[#121214] border border-border dark:border-white/10 rounded-3xl p-6 text-foreground shadow-2xl">
+          <DialogHeader className="mb-2">
+            <DialogTitle className="text-xl font-black tracking-tight text-foreground">
+              Nuevo Registro Biométrico
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Actualiza tu peso corporal y cintura para recalibrar tus calorías, IMC y progreso.
+            </DialogDescription>
+          </DialogHeader>
+          <RecordForm 
+            onSuccess={() => {
+              setIsRecordModalOpen(false);
+              refreshEcosystem();
+            }} 
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* 5. ASISTENTE IA FLOTANTE (Al tocar una parte del cuerpo en 3D) */}
       <FitAICoach
         activeFocus={activeFocus}
         records={records}
@@ -114,12 +207,6 @@ export default function DashboardPage() {
         kcalGoal={targetKcal}
         onClose={() => setActiveFocus(null)}
       />
-
-      <footer className="pt-10 pb-4 text-center">
-        <p className="text-[9px] text-muted-foreground font-bold tracking-[0.4em] uppercase">
-          Desarrollado por Alonso - Ingeniería de Sistemas UPN 2026
-        </p>
-      </footer>
 
     </div>
   );
