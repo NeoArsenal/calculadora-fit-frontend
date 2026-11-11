@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useApp } from '@/app/context/AppContext';
 import SummaryCards from './components/SummaryCards';
 import HistoryTable from './components/HistoryTable';
@@ -15,7 +14,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription 
 } from "@/components/ui/dialog";
 import { 
-  Plus, Dumbbell, Apple, User, TrendingUp, History, Flame 
+  User, TrendingUp, History, Flame 
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -40,58 +39,24 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 pb-10 animate-in fade-in duration-500 selection:bg-blue-500/30">
 
-      {/* 1. CABECERA DE CENTRO DE MANDO + ACCIONES RÁPIDAS */}
-      <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-border dark:border-white/10 pb-5">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
-                Hola, {userName}
-              </h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 dark:text-orange-400 text-[11px] font-bold">
-                <Flame size={12} className="fill-current" /> {totalWorkouts} sesiones
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground font-medium mt-1 capitalize">
-              {new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-            </p>
+      {/* 1. CABECERA LIMPIA DE CENTRO DE MANDO */}
+      <header className="flex items-center justify-between border-b border-border dark:border-white/10 pb-5">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
+              Hola, {userName}
+            </h1>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 dark:text-orange-400 text-[11px] font-bold">
+              <Flame size={12} className="fill-current" /> {totalWorkouts} sesiones
+            </span>
           </div>
-
-          {/* Botón de tema visible también en móvil */}
-          <div className="lg:hidden">
-            <ThemeToggle />
-          </div>
+          <p className="text-xs text-muted-foreground font-medium mt-1 capitalize">
+            {new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
         </div>
 
-        {/* Barra de Acciones Rápidas de 1 Toque */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <button
-            onClick={() => setIsRecordModalOpen(true)}
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/25 transition-all active:scale-95"
-          >
-            <Plus size={16} strokeWidth={2.5} />
-            Registrar Pesaje
-          </button>
-
-          <Link
-            href="/training"
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-card dark:bg-[#121214] hover:bg-accent border border-border dark:border-white/10 text-foreground text-xs font-bold transition-all active:scale-95"
-          >
-            <Dumbbell size={15} className="text-blue-500" />
-            Entrenar
-          </Link>
-
-          <Link
-            href="/nutrition"
-            className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-2xl bg-card dark:bg-[#121214] hover:bg-accent border border-border dark:border-white/10 text-foreground text-xs font-bold transition-all active:scale-95"
-          >
-            <Apple size={15} className="text-emerald-500" />
-            <span className="hidden sm:inline">Nutrición</span>
-          </Link>
-
-          <div className="hidden lg:block pl-1">
-            <ThemeToggle />
-          </div>
+        <div>
+          <ThemeToggle />
         </div>
       </header>
 
