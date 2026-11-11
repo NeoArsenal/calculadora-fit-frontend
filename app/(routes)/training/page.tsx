@@ -4,7 +4,7 @@ import { useState } from "react";
 import RoutinePlanner from "./components/RoutinePlanner";
 import WorkoutPanel from "./components/WorkoutPanel";
 import StrengthProgression from "./components/StrengthProgression";
-import { Play, Loader2, Bookmark, Pencil, Trash2, Check, X } from "lucide-react";
+import { Play, Loader2, Bookmark, Pencil, Trash2, Check, X, Calendar, TrendingUp } from "lucide-react";
 
 import { useApp } from "@/app/context/AppContext";
 import { updateRoutineName, deleteRoutineTemplate } from "@/services/api";
@@ -17,6 +17,7 @@ export default function TrainingPage() {
     const [editingRoutineId, setEditingRoutineId] = useState<number | null>(null);
     const [editName, setEditName] = useState("");
     const [routineToDelete, setRoutineToDelete] = useState<number | null>(null);
+    const [activeTab, setActiveTab] = useState<"logbook" | "progression">("logbook");
 
     // 📱 GESTOS TIPO iOS (Swipe to go back)
     const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -152,73 +153,99 @@ export default function TrainingPage() {
                         </div>
                         
                         {routines && routines.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {routines.map((routine: any) => (
-                                    <div 
-                                        key={routine.id}
-                                        onClick={() => editingRoutineId !== routine.id && startRoutine(routine)}
-                                        className="bg-card hover:bg-accent/40 border border-border dark:border-white/10 hover:border-blue-500/40 p-4 rounded-2xl text-left transition-all shadow-sm group relative overflow-hidden flex items-center justify-between cursor-pointer active:scale-[0.99]"
-                                    >
-                                        {editingRoutineId === routine.id ? (
-                                            <div className="w-full relative z-10" onClick={(e) => e.stopPropagation()}>
-                                                <input 
-                                                    type="text" 
-                                                    value={editName} 
-                                                    onChange={(e) => setEditName(e.target.value)}
-                                                    className="w-full bg-background border border-blue-500/50 text-foreground font-bold text-sm mb-2 px-3 py-1.5 rounded-xl outline-none"
-                                                    autoFocus
-                                                />
-                                                <div className="flex items-center gap-2">
-                                                    <button 
-                                                        onClick={(e) => handleSaveEdit(e, routine.id)}
-                                                        className="bg-green-500/20 text-green-600 dark:text-green-400 p-1.5 rounded-lg hover:bg-green-500/30 transition-colors"
-                                                    >
-                                                        <Check size={14} />
-                                                    </button>
-                                                    <button 
-                                                        onClick={handleCancelEdit}
-                                                        className="bg-red-500/20 text-red-600 dark:text-red-400 p-1.5 rounded-lg hover:bg-red-500/30 transition-colors"
-                                                    >
-                                                        <X size={14} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="flex items-center gap-3.5 flex-1 min-w-0 pr-2">
-                                                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20">
-                                                        <Bookmark size={18} />
-                                                    </div>
-                                                    <div className="min-w-0 flex-1">
-                                                        <h3 className="text-foreground font-bold text-sm md:text-base truncate leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                            {routine.name}
-                                                        </h3>
-                                                        <p className="text-[11px] text-muted-foreground font-semibold tracking-wide mt-0.5">
-                                                            {routine.exercises?.length || 0} ejercicios
-                                                        </p>
-                                                    </div>
-                                                </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                                {routines.map((routine: any) => {
+                                    const exList = routine.exercises || [];
+                                    const previewExercises = exList.slice(0, 2);
+                                    const remainingCount = Math.max(0, exList.length - 2);
 
-                                                <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                                                    <button 
-                                                        onClick={(e) => handleEditClick(e, routine)}
-                                                        className="p-1.5 text-muted-foreground hover:text-blue-500 rounded-lg hover:bg-accent transition-colors"
-                                                        title="Editar nombre"
-                                                    >
-                                                        <Pencil size={15} />
-                                                    </button>
-                                                    <button 
-                                                        onClick={(e) => handleDeleteClick(e, routine.id)}
-                                                        className="p-1.5 text-muted-foreground hover:text-red-500 rounded-lg hover:bg-accent transition-colors"
-                                                        title="Eliminar rutina"
-                                                    >
-                                                        <Trash2 size={15} />
-                                                    </button>
+                                    return (
+                                        <div 
+                                            key={routine.id}
+                                            onClick={() => editingRoutineId !== routine.id && startRoutine(routine)}
+                                            className="bg-card hover:bg-accent/40 border border-border dark:border-white/10 hover:border-blue-500/40 p-4 rounded-2xl text-left transition-all shadow-sm group relative overflow-hidden flex flex-col justify-between gap-3 cursor-pointer active:scale-[0.99]"
+                                        >
+                                            {editingRoutineId === routine.id ? (
+                                                <div className="w-full relative z-10" onClick={(e) => e.stopPropagation()}>
+                                                    <input 
+                                                        type="text" 
+                                                        value={editName} 
+                                                        onChange={(e) => setEditName(e.target.value)}
+                                                        className="w-full bg-background border border-blue-500/50 text-foreground font-bold text-sm mb-2 px-3 py-1.5 rounded-xl outline-none"
+                                                        autoFocus
+                                                    />
+                                                    <div className="flex items-center gap-2">
+                                                        <button 
+                                                            onClick={(e) => handleSaveEdit(e, routine.id)}
+                                                            className="bg-green-500/20 text-green-600 dark:text-green-400 p-1.5 rounded-lg hover:bg-green-500/30 transition-colors"
+                                                        >
+                                                            <Check size={14} />
+                                                        </button>
+                                                        <button 
+                                                            onClick={handleCancelEdit}
+                                                            className="bg-red-500/20 text-red-600 dark:text-red-400 p-1.5 rounded-lg hover:bg-red-500/30 transition-colors"
+                                                        >
+                                                            <X size={14} />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            </>
-                                        )}
-                                    </div>
-                                ))}
+                                            ) : (
+                                                <>
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center shrink-0 border border-blue-500/20 transition-colors">
+                                                                <Play size={16} fill="currentColor" className="ml-0.5" />
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <h3 className="text-foreground font-bold text-sm md:text-base truncate leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                                    {routine.name}
+                                                                </h3>
+                                                                <p className="text-[11px] text-muted-foreground font-semibold tracking-wide mt-0.5">
+                                                                    {exList.length} {exList.length === 1 ? "ejercicio" : "ejercicios"}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                                            <button 
+                                                                onClick={(e) => handleEditClick(e, routine)}
+                                                                className="p-1.5 text-muted-foreground hover:text-blue-500 rounded-lg hover:bg-accent transition-colors"
+                                                                title="Editar nombre"
+                                                            >
+                                                                <Pencil size={15} />
+                                                            </button>
+                                                            <button 
+                                                                onClick={(e) => handleDeleteClick(e, routine.id)}
+                                                                className="p-1.5 text-muted-foreground hover:text-red-500 rounded-lg hover:bg-accent transition-colors"
+                                                                title="Eliminar rutina"
+                                                            >
+                                                                <Trash2 size={15} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {exList.length > 0 && (
+                                                        <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/60 dark:border-white/5">
+                                                            {previewExercises.map((rx: any, idx: number) => (
+                                                                <span 
+                                                                    key={idx}
+                                                                    className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-muted/70 dark:bg-white/5 text-muted-foreground truncate max-w-[140px]"
+                                                                >
+                                                                    {rx.exercise?.name || rx.exerciseName || "Ejercicio"}
+                                                                </span>
+                                                            ))}
+                                                            {remainingCount > 0 && (
+                                                                <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                                                    +{remainingCount}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="bg-card border border-border dark:border-white/10 p-6 rounded-2xl text-center shadow-sm transition-colors">
@@ -227,14 +254,42 @@ export default function TrainingPage() {
                         )}
                     </div>
 
-                    {/* 📅 CALENDARIO Y DETALLES */}
-                    <div className="md:col-span-12">
-                        <RoutinePlanner sessions={sessions} /> 
-                    </div>
+                    {/* 🎛️ HUB DE HISTORIAL Y PROGRESO (PESTAÑAS RÁPIDAS) */}
+                    <div className="md:col-span-12 space-y-5">
+                        <div className="flex items-center justify-between flex-wrap gap-3">
+                            <div className="inline-flex p-1 rounded-2xl bg-gray-100 dark:bg-[#0f0f11] border border-gray-200 dark:border-white/10">
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab("logbook")}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                                        activeTab === "logbook"
+                                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/25"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                >
+                                    <Calendar size={14} />
+                                    Historial (Logbook)
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab("progression")}
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                                        activeTab === "progression"
+                                            ? "bg-blue-600 text-white shadow-md shadow-blue-600/25"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                >
+                                    <TrendingUp size={14} />
+                                    Progreso de Fuerza
+                                </button>
+                            </div>
+                        </div>
 
-                    {/* 📊 GRÁFICO DE PROGRESO */}
-                    <div className="md:col-span-12 lg:col-span-8 mx-auto w-full">
-                        <StrengthProgression sessions={sessions} />
+                        {activeTab === "logbook" ? (
+                            <RoutinePlanner sessions={sessions} />
+                        ) : (
+                            <StrengthProgression sessions={sessions} />
+                        )}
                     </div>
 
                 </div>
