@@ -152,68 +152,76 @@ export default function TrainingPage() {
                         </div>
                         
                         {routines && routines.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {routines.map((routine: any) => (
-                                    <button 
+                                    <div 
                                         key={routine.id}
-                                        onClick={() => startRoutine(routine)}
-                                        className="bg-white dark:bg-[#0a0a0b] hover:bg-gray-50 dark:hover:bg-white/5 border border-gray-200 dark:border-white/5 hover:border-blue-500/30 p-5 rounded-[2rem] text-left transition-all shadow-xl shadow-gray-200/50 dark:shadow-none group relative overflow-hidden flex flex-col justify-between min-h-[140px]"
+                                        onClick={() => editingRoutineId !== routine.id && startRoutine(routine)}
+                                        className="bg-card hover:bg-accent/40 border border-border dark:border-white/10 hover:border-blue-500/40 p-4 rounded-2xl text-left transition-all shadow-sm group relative overflow-hidden flex items-center justify-between cursor-pointer active:scale-[0.99]"
                                     >
-                                        <div className="absolute top-0 left-0 w-1 h-full bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                        
                                         {editingRoutineId === routine.id ? (
                                             <div className="w-full relative z-10" onClick={(e) => e.stopPropagation()}>
                                                 <input 
                                                     type="text" 
                                                     value={editName} 
                                                     onChange={(e) => setEditName(e.target.value)}
-                                                    className="w-full bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white font-bold text-xl mb-1 px-3 py-1 rounded-lg outline-none border border-blue-500/50"
+                                                    className="w-full bg-background border border-blue-500/50 text-foreground font-bold text-sm mb-2 px-3 py-1.5 rounded-xl outline-none"
                                                     autoFocus
                                                 />
-                                                <div className="flex items-center gap-2 mt-3">
-                                                    <div 
+                                                <div className="flex items-center gap-2">
+                                                    <button 
                                                         onClick={(e) => handleSaveEdit(e, routine.id)}
-                                                        className="bg-green-500/20 text-green-600 dark:text-green-400 p-2 rounded-full cursor-pointer hover:bg-green-500/40 transition-colors"
+                                                        className="bg-green-500/20 text-green-600 dark:text-green-400 p-1.5 rounded-lg hover:bg-green-500/30 transition-colors"
                                                     >
-                                                        <Check size={16} />
-                                                    </div>
-                                                    <div 
+                                                        <Check size={14} />
+                                                    </button>
+                                                    <button 
                                                         onClick={handleCancelEdit}
-                                                        className="bg-red-500/20 text-red-600 dark:text-red-400 p-2 rounded-full cursor-pointer hover:bg-red-500/40 transition-colors"
+                                                        className="bg-red-500/20 text-red-600 dark:text-red-400 p-1.5 rounded-lg hover:bg-red-500/30 transition-colors"
                                                     >
-                                                        <X size={16} />
-                                                    </div>
+                                                        <X size={14} />
+                                                    </button>
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="w-full relative z-10">
-                                                <div className="flex justify-between items-start">
-                                                    <h3 className="text-gray-900 dark:text-white font-bold text-xl mb-1 transition-colors pr-8 leading-tight">{routine.name}</h3>
-                                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity absolute right-0 top-0">
-                                                        <div 
-                                                            onClick={(e) => handleEditClick(e, routine)}
-                                                            className="text-gray-400 hover:text-blue-500 p-1 cursor-pointer transition-colors"
-                                                        >
-                                                            <Pencil size={16} />
-                                                        </div>
-                                                        <div 
-                                                            onClick={(e) => handleDeleteClick(e, routine.id)}
-                                                            className="text-gray-400 hover:text-red-500 p-1 cursor-pointer transition-colors"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </div>
+                                            <>
+                                                <div className="flex items-center gap-3.5 flex-1 min-w-0 pr-2">
+                                                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20">
+                                                        <Bookmark size={18} />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <h3 className="text-foreground font-bold text-sm md:text-base truncate leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                            {routine.name}
+                                                        </h3>
+                                                        <p className="text-[11px] text-muted-foreground font-semibold tracking-wide mt-0.5">
+                                                            {routine.exercises?.length || 0} ejercicios
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground font-bold tracking-widest mt-2">
-                                                    {routine.exercises?.length || 0} Ejercicios
-                                                </p>
-                                            </div>
+
+                                                <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                                    <button 
+                                                        onClick={(e) => handleEditClick(e, routine)}
+                                                        className="p-1.5 text-muted-foreground hover:text-blue-500 rounded-lg hover:bg-accent transition-colors"
+                                                        title="Editar nombre"
+                                                    >
+                                                        <Pencil size={15} />
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => handleDeleteClick(e, routine.id)}
+                                                        className="p-1.5 text-muted-foreground hover:text-red-500 rounded-lg hover:bg-accent transition-colors"
+                                                        title="Eliminar rutina"
+                                                    >
+                                                        <Trash2 size={15} />
+                                                    </button>
+                                                </div>
+                                            </>
                                         )}
-                                    </button>
+                                    </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 p-6 rounded-[2rem] text-center shadow-xl shadow-gray-200/50 dark:shadow-none transition-colors">
+                            <div className="bg-card border border-border dark:border-white/10 p-6 rounded-2xl text-center shadow-sm transition-colors">
                                 <p className="text-sm text-muted-foreground">Aún no has guardado ninguna plantilla. Crea una rutina libre y presiona "Guardar Plantilla".</p>
                             </div>
                         )}

@@ -219,7 +219,6 @@ export default function WorkoutPanel({
     const addSet = (exerciseId: number) => {
         setWorkoutLogs(prev => {
             const currentSets = prev[exerciseId] || [];
-            // Si ya hay series previas, autocompletamos con los valores de la última
             const lastSet = currentSets[currentSets.length - 1];
             return {
                 ...prev,
@@ -298,61 +297,66 @@ export default function WorkoutPanel({
 
             return {
                 exerciseId: ex.id,
-                exerciseName: ex.name,
-                setsDone: completedSets.length, 
-                repsDone: bestReps,             
-                weightUsed: maxWeight           
+                setsDone: completedSets.length > 0 ? completedSets.length : 1,
+                repsDone: bestReps > 0 ? bestReps : 10,
+                weightUsed: maxWeight,
+                totalVolume: completedSets.reduce((acc, curr) => 
+                    acc + (parseFloat(String(curr.weight)) || 0) * (parseInt(String(curr.reps), 10) || 0), 0
+                )
             };
-        }).filter(ex => ex.setsDone > 0); 
+        });
 
         if (finalData.length === 0) {
-            toast.error("Rutina vacía", {
-                description: "Escribe tus pesos y repeticiones o marca al menos una serie antes de finalizar."
-            });
+            toast.error("No has completado ninguna serie de ejercicio.");
             return;
         }
 
         setIsSaving(true);
-
         try {
-            const payload = {
-                workoutDate: new Date().toISOString(),
-                exerciseLogs: finalData
-            };
-
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
-            const response = await fetch(`${apiUrl}/workout-sessions`, {
-                method: 'POST',
-                headers: getAuthHeaders(true),
-                body: JSON.stringify(payload),
+            const token = localStorage.getItem("token");
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://calculadorafit-backend-bda6fge5d3h7bddz.eastus2-01.azurewebsites.net"}/workout-sessions`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    date: new Date().toISOString(),
+                    name: initialRoutine ? initialRoutine.name : "Sesión de Entrenamiento",
+                    durationMinutes: Math.max(1, Math.round(elapsedSeconds / 60)),
+                    logs: finalData
+                })
             });
 
-            if (!response.ok) throw new Error(`Error: ${response.status}`);
-
-            toast.success("¡Entrenamiento completado y guardado! 🏆");
-            gainXp(25);
-            onFinish(); 
-            
+            if (response.ok) {
+                playChime();
+                gainXp(100);
+                toast.success("¡Entrenamiento guardado con éxito! +100 XP 🏆");
+                await refreshEcosystem();
+                onFinish();
+            } else {
+                toast.error("Error al registrar la sesión en la nube.");
+            }
         } catch (error) {
-            console.error("❌ Error de conexión:", error);
-            toast.error("Hubo un problema al guardar el entrenamiento.");
+            console.error(error);
+            toast.error("Error de conexión con el servidor.");
         } finally {
-            setIsSaving(false); 
+            setIsSaving(false);
         }
     };
 
     return (
         <div 
-            className="fixed inset-0 z-[100] bg-[#07090e] text-foreground overflow-y-auto pt-2 px-3 md:px-6 pb-28 overscroll-none animate-in slide-in-from-bottom-5 duration-300 select-none"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
+            className="min-h-screen bg-background text-foreground p-3 md:p-6 pb-32 transition-colors relative"
         >
             {/* 🔴 HEADER SUPERIOR FLOTANTE CON CRONÓMETRO */}
-            <header className="sticky top-0 z-40 bg-[#07090e]/90 backdrop-blur-2xl border-b border-white/10 -mx-3 md:-mx-6 px-4 py-3 mb-5 flex items-center justify-between">
+            <header className="sticky top-0 z-40 bg-background/90 dark:bg-[#0a0a0b]/90 backdrop-blur-2xl border-b border-border dark:border-white/10 -mx-3 md:-mx-6 px-4 py-3 mb-5 flex items-center justify-between">
                 <button 
                     onClick={onBack}
-                    className="w-10 h-10 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-foreground flex items-center justify-center transition-all active:scale-95"
+                    className="w-10 h-10 rounded-full bg-muted/60 dark:bg-white/5 border border-border dark:border-white/10 hover:bg-muted dark:hover:bg-white/10 text-foreground flex items-center justify-center transition-all active:scale-95"
                     title="Volver"
                 >
                     <ChevronLeft size={22} />
@@ -360,12 +364,12 @@ export default function WorkoutPanel({
 
                 <div className="flex flex-col items-center">
                     <div className="flex items-center gap-1.5">
-                        <h2 className="text-sm md:text-base font-black text-white tracking-tight">
+                        <h2 className="text-sm md:text-base font-black text-foreground tracking-tight">
                             {initialRoutine ? initialRoutine.name : "Rutina libre"}
                         </h2>
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.9)]" />
                     </div>
-                    <div className="flex items-center gap-1.5 mt-0.5 px-3 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-400 text-[11px] font-bold">
+                    <div className="flex items-center gap-1.5 mt-0.5 px-3 py-0.5 rounded-full bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/20 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 text-[11px] font-bold">
                         <Clock size={12} />
                         <span>{formatElapsedTime(elapsedSeconds)}</span>
                     </div>
@@ -373,7 +377,7 @@ export default function WorkoutPanel({
 
                 <button 
                     onClick={promptSaveTemplate}
-                    className="w-10 h-10 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-foreground flex items-center justify-center transition-all active:scale-95"
+                    className="w-10 h-10 rounded-full bg-muted/60 dark:bg-white/5 border border-border dark:border-white/10 hover:bg-muted dark:hover:bg-white/10 text-foreground flex items-center justify-center transition-all active:scale-95"
                     title="Opciones"
                 >
                     <MoreVertical size={18} />
@@ -398,15 +402,12 @@ export default function WorkoutPanel({
                     return (
                         <div 
                             key={`${ex.id}-${exIndex}`}
-                            className="bg-[#0f1422] border border-white/10 rounded-[2rem] p-4 md:p-5 shadow-2xl relative overflow-hidden"
+                            className="bg-card dark:bg-[#121214] border border-border dark:border-white/10 rounded-[2rem] p-4 md:p-5 shadow-lg dark:shadow-2xl relative overflow-hidden transition-colors"
                         >
-                            {/* Resplandor decorativo sutil */}
-                            <div className="pointer-events-none absolute -top-12 -right-12 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl" />
-
                             {/* 1. CABECERA DEL EJERCICIO */}
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                    <span className="bg-blue-950/80 text-blue-400 border border-blue-500/30 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                                    <span className="bg-blue-500/10 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 border border-blue-500/20 dark:border-blue-500/30 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                                         {exIndex + 1} DE {activeExercises.length}
                                     </span>
                                     <span className="text-xs font-semibold text-muted-foreground">
@@ -415,7 +416,7 @@ export default function WorkoutPanel({
                                 </div>
                                 <button
                                     onClick={() => removeExercise(ex.id)}
-                                    className="p-1.5 text-muted-foreground hover:text-rose-400 transition-colors rounded-lg hover:bg-white/5"
+                                    className="p-1.5 text-muted-foreground hover:text-rose-500 transition-colors rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
                                     title="Quitar ejercicio"
                                 >
                                     <Trash2 size={16} />
@@ -423,7 +424,7 @@ export default function WorkoutPanel({
                             </div>
 
                             {/* 2. TÍTULO Y MÚSCULOS */}
-                            <h3 className="text-lg md:text-xl font-black text-white tracking-tight mb-2">
+                            <h3 className="text-lg md:text-xl font-black text-foreground tracking-tight mb-2">
                                 {ex.name}
                             </h3>
 
@@ -432,7 +433,7 @@ export default function WorkoutPanel({
                                     {muscleTags.map((muscle: string, mIdx: number) => (
                                         <span 
                                             key={mIdx}
-                                            className="bg-white/5 border border-white/10 text-muted-foreground text-[10px] font-medium px-2.5 py-0.5 rounded-full capitalize"
+                                            className="bg-muted dark:bg-white/5 border border-border dark:border-white/10 text-muted-foreground text-[10px] font-medium px-2.5 py-0.5 rounded-full capitalize"
                                         >
                                             {muscle}
                                         </span>
@@ -441,7 +442,7 @@ export default function WorkoutPanel({
                             )}
 
                             {/* 3. IMAGEN / GIF TÉCNICO */}
-                            <div className="bg-white rounded-2xl w-full h-[140px] md:h-[160px] mb-3.5 border border-white/10 overflow-hidden flex items-center justify-center relative shadow-inner">
+                            <div className="bg-white rounded-2xl w-full h-[140px] md:h-[160px] mb-3.5 border border-border dark:border-white/10 overflow-hidden flex items-center justify-center relative shadow-inner">
                                 {ex.gifUrl ? (
                                     <img 
                                         src={ex.gifUrl} 
@@ -455,14 +456,14 @@ export default function WorkoutPanel({
                             </div>
 
                             {/* 4. BARRA DE DESCANSO AUTOMÁTICO */}
-                            <div className="bg-[#151c2d] border border-white/5 rounded-xl px-3.5 py-2.5 flex items-center justify-between mb-4">
+                            <div className="bg-muted/60 dark:bg-white/[0.03] border border-border dark:border-white/5 rounded-xl px-3.5 py-2.5 flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                                    <Clock size={14} className="text-blue-400" />
-                                    <span>Descanso automático: <strong className="text-white font-bold">{maxRestTime} seg</strong></span>
+                                    <Clock size={14} className="text-blue-500 dark:text-blue-400" />
+                                    <span>Descanso automático: <strong className="text-foreground font-bold">{maxRestTime} seg</strong></span>
                                 </div>
                                 <button
                                     onClick={() => setIsRestModalOpen(true)}
-                                    className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors"
+                                    className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline transition-colors"
                                 >
                                     Cambiar
                                 </button>
@@ -491,18 +492,18 @@ export default function WorkoutPanel({
                                                 key={setIdx}
                                                 className={`grid grid-cols-12 gap-2 items-center p-2 rounded-2xl border transition-all ${
                                                     set.completed 
-                                                        ? 'bg-emerald-950/20 border-emerald-500/30' 
-                                                        : 'bg-[#0a0f1d] border-white/5'
+                                                        ? 'bg-emerald-500/10 dark:bg-emerald-950/20 border-emerald-500/30' 
+                                                        : 'bg-muted/40 dark:bg-white/[0.03] border-border dark:border-white/5'
                                                 }`}
                                             >
                                                 {/* SERIE (Píldora) */}
                                                 <div className="col-span-2 flex justify-center">
                                                     <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black border ${
                                                         set.completed 
-                                                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
+                                                            ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40' 
                                                             : setIdx === 0 
-                                                                ? 'bg-blue-600/20 text-blue-400 border-blue-500/40' 
-                                                                : 'bg-white/5 text-muted-foreground border-white/10'
+                                                                ? 'bg-blue-600/15 text-blue-600 dark:text-blue-400 border-blue-500/30' 
+                                                                : 'bg-muted dark:bg-white/5 text-muted-foreground border-border dark:border-white/10'
                                                     }`}>
                                                         {setIdx + 1}
                                                     </span>
@@ -522,7 +523,7 @@ export default function WorkoutPanel({
                                                         value={set.weight}
                                                         onChange={(e) => updateSet(ex.id, setIdx, 'weight', e.target.value)}
                                                         disabled={set.completed || isSaving}
-                                                        className="w-full bg-[#141b2c] border border-white/10 rounded-xl text-center text-sm font-black text-white py-2 outline-none focus:border-blue-500 transition-all shadow-inner disabled:opacity-50" 
+                                                        className="w-full bg-background dark:bg-black/40 border border-border dark:border-white/10 rounded-xl text-center text-sm font-black text-foreground py-2 outline-none focus:border-blue-500 transition-all shadow-inner disabled:opacity-50" 
                                                     />
                                                     {isPR && (
                                                         <span className="absolute -top-2 -right-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full shadow-lg pointer-events-none">
@@ -539,7 +540,7 @@ export default function WorkoutPanel({
                                                         value={set.reps}
                                                         onChange={(e) => updateSet(ex.id, setIdx, 'reps', e.target.value)}
                                                         disabled={set.completed || isSaving}
-                                                        className="w-full bg-[#141b2c] border border-white/10 rounded-xl text-center text-sm font-black text-white py-2 outline-none focus:border-blue-500 transition-all shadow-inner disabled:opacity-50" 
+                                                        className="w-full bg-background dark:bg-black/40 border border-border dark:border-white/10 rounded-xl text-center text-sm font-black text-foreground py-2 outline-none focus:border-blue-500 transition-all shadow-inner disabled:opacity-50" 
                                                     />
                                                 </div>
 
@@ -550,8 +551,8 @@ export default function WorkoutPanel({
                                                         disabled={isSaving}
                                                         className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90 ${
                                                             set.completed 
-                                                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/40' 
-                                                                : 'bg-[#141b2c] border border-white/10 text-muted-foreground hover:border-blue-500/40 hover:text-white'
+                                                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
+                                                                : 'bg-muted/60 dark:bg-black/40 border border-border dark:border-white/10 text-muted-foreground hover:border-blue-500/40 hover:text-foreground'
                                                         }`}
                                                         title="Marcar serie completada"
                                                     >
@@ -566,21 +567,21 @@ export default function WorkoutPanel({
                                     <button 
                                         onClick={() => addSet(ex.id)}
                                         disabled={isSaving}
-                                        className="w-full py-3 mt-2 border border-dashed border-white/15 hover:border-blue-500/40 hover:bg-blue-500/5 rounded-xl text-xs font-bold text-muted-foreground hover:text-white transition-all flex items-center justify-center gap-1.5 active:scale-[0.99]"
+                                        className="w-full py-3 mt-2 border border-dashed border-border dark:border-white/15 hover:border-blue-500/40 hover:bg-blue-500/5 rounded-xl text-xs font-bold text-muted-foreground hover:text-foreground transition-all flex items-center justify-center gap-1.5 active:scale-[0.99]"
                                     >
                                         <Plus size={14} /> Añadir serie
                                     </button>
                                 </div>
                             ) : (
                                 /* ✨ ESTADO VACÍO: Cuando no hay series aún */
-                                <div className="py-7 px-4 border border-dashed border-white/10 rounded-2xl text-center bg-white/[0.01] space-y-3">
+                                <div className="py-7 px-4 border border-dashed border-border dark:border-white/10 rounded-2xl text-center bg-muted/20 dark:bg-white/[0.01] space-y-3">
                                     <p className="text-xs text-muted-foreground font-medium">
                                         Aún no has registrado series para este ejercicio
                                     </p>
                                     <button 
                                         onClick={() => addSet(ex.id)}
                                         disabled={isSaving}
-                                        className="w-full py-2.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+                                        className="w-full py-2.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
                                     >
                                         <Plus size={14} /> Iniciar primera serie
                                     </button>
@@ -592,11 +593,11 @@ export default function WorkoutPanel({
 
                 {/* ✨ EMPTY STATE GLOBAL: Cuando no hay ningún ejercicio en la rutina */}
                 {activeExercises.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-16 px-4 text-center border-2 border-dashed border-white/10 rounded-[2.5rem] bg-[#0f1422]">
-                        <div className="w-16 h-16 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-4 shadow-inner">
+                    <div className="flex flex-col items-center justify-center py-16 px-4 text-center border-2 border-dashed border-border dark:border-white/10 rounded-[2.5rem] bg-card dark:bg-[#121214]">
+                        <div className="w-16 h-16 bg-blue-500/10 text-blue-500 dark:text-blue-400 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-4 shadow-inner">
                             <Dumbbell size={32} />
                         </div>
-                        <h3 className="text-lg font-bold text-white mb-2 tracking-tight">
+                        <h3 className="text-lg font-bold text-foreground mb-2 tracking-tight">
                             Rutina Vacía
                         </h3>
                         <p className="text-xs text-muted-foreground max-w-[260px] mx-auto leading-relaxed">
@@ -609,9 +610,9 @@ export default function WorkoutPanel({
                 <button
                     onClick={() => setOpen(true)}
                     disabled={isSaving}
-                    className="w-full py-4 bg-[#0f1422] hover:bg-[#151c2d] border border-white/10 text-white rounded-2xl flex items-center justify-center gap-2 text-sm font-bold tracking-wide transition-all shadow-lg active:scale-[0.98]"
+                    className="w-full py-4 bg-card dark:bg-[#121214] hover:bg-muted/60 dark:hover:bg-white/5 border border-border dark:border-white/10 text-foreground rounded-2xl flex items-center justify-center gap-2 text-sm font-bold tracking-wide transition-all shadow-md active:scale-[0.98]"
                 >
-                    <div className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                         <Plus size={14} strokeWidth={3} />
                     </div>
                     Agregar ejercicio
@@ -619,11 +620,11 @@ export default function WorkoutPanel({
             </div>
 
             {/* 🔴 BARRA INFERIOR FIJA (Guardar Plantilla + Finalizar Entrenamiento) */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-[#07090e]/95 backdrop-blur-2xl border-t border-white/10 z-[110] flex items-center gap-3">
+            <div className="fixed bottom-0 left-0 right-0 p-4 pb-6 bg-background/95 dark:bg-[#0a0a0b]/95 backdrop-blur-2xl border-t border-border dark:border-white/10 z-[110] flex items-center gap-3">
                 <button 
                     onClick={promptSaveTemplate}
                     disabled={isSaving || isSavingTemplate}
-                    className="py-3.5 px-4 bg-[#0f1422] hover:bg-[#151c2d] border border-white/10 text-muted-foreground hover:text-white rounded-2xl flex items-center justify-center gap-2 text-xs font-bold transition-all active:scale-95 shrink-0"
+                    className="py-3.5 px-4 bg-muted/60 dark:bg-white/5 hover:bg-muted dark:hover:bg-white/10 border border-border dark:border-white/10 text-muted-foreground hover:text-foreground rounded-2xl flex items-center justify-center gap-2 text-xs font-bold transition-all active:scale-95 shrink-0"
                 >
                     <Bookmark size={16} />
                     <span className="hidden sm:inline">Guardar plantilla</span>
@@ -646,18 +647,18 @@ export default function WorkoutPanel({
 
             {/* 🔴 BUSCADOR DE EJERCICIOS */}
             <CommandDialog open={open} onOpenChange={setOpen}>
-                <Command className="bg-[#0f1422] text-foreground border-white/10">
-                    <CommandInput placeholder="Buscar ejercicio en Kallp..." className="text-white" />
-                    <CommandList className="bg-[#0f1422]">
+                <Command className="bg-card dark:bg-[#121214] text-foreground border-border dark:border-white/10">
+                    <CommandInput placeholder="Buscar ejercicio en Kallp..." className="text-foreground" />
+                    <CommandList className="bg-card dark:bg-[#121214]">
                         <CommandEmpty>No se encontraron resultados.</CommandEmpty>
                         <CommandGroup heading="Ejercicios Disponibles" className="text-muted-foreground">
                             {exercises.map((ex) => (
                                 <CommandItem 
                                     key={ex.id} 
                                     onSelect={() => addAccessory(ex)} 
-                                    className="cursor-pointer flex items-center gap-4 p-3 aria-selected:bg-blue-600/20 rounded-xl mb-1 transition-colors"
+                                    className="cursor-pointer flex items-center gap-4 p-3 aria-selected:bg-accent dark:aria-selected:bg-blue-600/20 rounded-xl mb-1 transition-colors"
                                 >
-                                    <div className="w-20 h-14 bg-white rounded-lg overflow-hidden flex-shrink-0 relative border border-white/10 shadow-sm flex items-center justify-center">
+                                    <div className="w-20 h-14 bg-white rounded-lg overflow-hidden flex-shrink-0 relative border border-border dark:border-white/10 shadow-sm flex items-center justify-center">
                                         {ex.gifUrl ? (
                                             <img src={ex.gifUrl} alt={ex.name} loading="lazy" className="w-full h-full object-contain mix-blend-multiply" />
                                         ) : (
@@ -665,8 +666,8 @@ export default function WorkoutPanel({
                                         )}
                                     </div>
                                     <div className="flex flex-col flex-grow">
-                                        <span className="uppercase text-xs font-black text-white">{ex.name}</span>
-                                        <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">{ex.target || ex.bodyPart}</span>
+                                        <span className="uppercase text-xs font-black text-foreground">{ex.name}</span>
+                                        <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">{ex.target || ex.bodyPart}</span>
                                     </div>
                                 </CommandItem>
                             ))}
@@ -677,9 +678,9 @@ export default function WorkoutPanel({
 
             {/* 🔴 MODAL PARA GUARDAR PLANTILLA */}
             <Dialog open={isTemplateModalOpen} onOpenChange={setIsTemplateModalOpen}>
-                <DialogContent className="sm:max-w-md bg-[#0f1422] border border-white/10 rounded-[2rem] p-6 shadow-2xl text-foreground">
+                <DialogContent className="sm:max-w-md bg-card dark:bg-[#121214] border border-border dark:border-white/10 rounded-[2rem] p-6 shadow-2xl text-foreground">
                     <DialogHeader className="mb-2">
-                        <DialogTitle className="text-xl font-black italic uppercase tracking-tight text-white">
+                        <DialogTitle className="text-xl font-black italic uppercase tracking-tight text-foreground">
                             Guardar Plantilla
                         </DialogTitle>
                         <DialogDescription className="text-muted-foreground text-xs font-medium">
@@ -692,7 +693,7 @@ export default function WorkoutPanel({
                             value={templateName}
                             onChange={(e) => setTemplateName(e.target.value)}
                             placeholder="Nombre de la plantilla..."
-                            className="bg-white/5 border-white/10 rounded-xl focus-visible:ring-blue-500 font-bold text-white h-12 px-4"
+                            className="bg-background dark:bg-white/5 border-border dark:border-white/10 rounded-xl focus-visible:ring-blue-500 font-bold text-foreground h-12 px-4"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleSaveTemplate();
                             }}
@@ -705,7 +706,7 @@ export default function WorkoutPanel({
                             type="button" 
                             variant="ghost" 
                             onClick={() => setIsTemplateModalOpen(false)}
-                            className="rounded-xl text-xs font-bold tracking-wider uppercase text-muted-foreground hover:text-white"
+                            className="rounded-xl text-xs font-bold tracking-wider uppercase text-muted-foreground hover:text-foreground"
                         >
                             Cancelar
                         </Button>
@@ -723,9 +724,9 @@ export default function WorkoutPanel({
 
             {/* 🔴 MODAL DE CAMBIO DE TIEMPO DE DESCANSO */}
             <Dialog open={isRestModalOpen} onOpenChange={setIsRestModalOpen}>
-                <DialogContent className="sm:max-w-xs bg-[#0f1422] border border-white/10 rounded-[2rem] p-6 shadow-2xl text-foreground">
+                <DialogContent className="sm:max-w-xs bg-card dark:bg-[#121214] border border-border dark:border-white/10 rounded-[2rem] p-6 shadow-2xl text-foreground">
                     <DialogHeader>
-                        <DialogTitle className="text-lg font-black text-white text-center">
+                        <DialogTitle className="text-lg font-black text-foreground text-center">
                             Descanso entre Series
                         </DialogTitle>
                         <DialogDescription className="text-muted-foreground text-xs text-center">
@@ -745,7 +746,7 @@ export default function WorkoutPanel({
                                 className={`py-3 rounded-xl text-xs font-black transition-all border ${
                                     maxRestTime === seconds 
                                         ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-600/30' 
-                                        : 'bg-white/5 text-muted-foreground border-white/10 hover:border-white/20 hover:text-white'
+                                        : 'bg-muted/60 dark:bg-white/5 text-muted-foreground border-border dark:border-white/10 hover:border-blue-500/40 hover:text-foreground'
                                 }`}
                             >
                                 {seconds} seg
@@ -757,10 +758,10 @@ export default function WorkoutPanel({
 
             {/* ⏱️ TEMPORIZADOR INTELIGENTE FLOTANTE (Al descansar) */}
             {restTime !== null && (
-                <div className="fixed top-18 right-4 md:top-24 md:right-8 bg-[#0a0f1d]/95 backdrop-blur-2xl border border-white/20 p-3.5 rounded-3xl shadow-2xl z-50 flex items-center gap-4 animate-in fade-in slide-in-from-top-6 duration-300">
+                <div className="fixed top-18 right-4 md:top-24 md:right-8 bg-card/95 dark:bg-[#0a0a0b]/95 backdrop-blur-2xl border border-border dark:border-white/20 p-3.5 rounded-3xl shadow-2xl z-50 flex items-center gap-4 animate-in fade-in slide-in-from-top-6 duration-300">
                     <div className="relative w-14 h-14 flex items-center justify-center">
                         <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                            <circle cx="50" cy="50" r="45" className="stroke-white/10" strokeWidth="8" fill="none" />
+                            <circle cx="50" cy="50" r="45" className="stroke-muted dark:stroke-white/10" strokeWidth="8" fill="none" />
                             <circle 
                                 cx="50" cy="50" r="45" 
                                 className={`transition-all duration-1000 ease-linear ${
@@ -777,7 +778,7 @@ export default function WorkoutPanel({
                                 strokeDashoffset={283 - (283 * restTime) / Math.max(maxRestTime, 1)}
                             />
                         </svg>
-                        <span className="absolute text-white font-black text-sm tabular-nums">
+                        <span className="absolute text-foreground font-black text-sm tabular-nums">
                             {Math.floor(restTime / 60)}:{(restTime % 60).toString().padStart(2, '0')}
                         </span>
                     </div>
@@ -786,7 +787,7 @@ export default function WorkoutPanel({
                         <div className="flex gap-1.5">
                             <button 
                                 onClick={() => setRestTime(prev => Math.max(0, prev! - 15))}
-                                className="bg-white/10 hover:bg-white/20 text-white rounded-lg px-2.5 py-1 text-[11px] font-black transition-colors"
+                                className="bg-muted hover:bg-accent dark:bg-white/10 dark:hover:bg-white/20 text-foreground rounded-lg px-2.5 py-1 text-[11px] font-black transition-colors"
                             >
                                 -15s
                             </button>
@@ -798,14 +799,14 @@ export default function WorkoutPanel({
                                         return newTime;
                                     });
                                 }}
-                                className="bg-white/10 hover:bg-white/20 text-white rounded-lg px-2.5 py-1 text-[11px] font-black transition-colors"
+                                className="bg-muted hover:bg-accent dark:bg-white/10 dark:hover:bg-white/20 text-foreground rounded-lg px-2.5 py-1 text-[11px] font-black transition-colors"
                             >
                                 +30s
                             </button>
                         </div>
                         <button 
                             onClick={() => setRestTime(null)}
-                            className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-colors"
+                            className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-500 dark:text-rose-400 border border-rose-500/30 rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-colors"
                         >
                             <FastForward size={11} strokeWidth={3} /> Saltar
                         </button>

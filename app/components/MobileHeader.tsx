@@ -17,7 +17,7 @@ export default function MobileHeader() {
   const userInitial = userName ? userName.charAt(0).toUpperCase() : "U";
 
   return (
-    <header className="md:hidden flex items-center justify-between px-5 h-16 bg-background/70 backdrop-blur-2xl border-b border-white/10 dark:border-white/10 shrink-0 z-40">
+    <header className="md:hidden flex items-center justify-between px-5 h-16 bg-background/80 dark:bg-[#0a0a0b]/80 backdrop-blur-2xl border-b border-border dark:border-white/10 shrink-0 z-40">
       {/* Avatar (Left) */}
       <Link href="/settings" className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600/30 to-indigo-600/30 flex items-center justify-center overflow-hidden border border-blue-500/30 hover:scale-105 transition-transform active:scale-95 shadow-sm">
         <span className="text-blue-400 font-black text-xs">{userInitial}</span>
