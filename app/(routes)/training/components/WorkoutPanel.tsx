@@ -168,7 +168,31 @@ export default function WorkoutPanel({
     const { exercises } = useExercises();
     const { gainXp, refreshEcosystem, trainingSessions } = useApp();
     const [open, setOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
     const [activeExercises, setActiveExercises] = useState<any[]>([]);
+
+    const BODY_PART_FILTERS = [
+        { id: "ALL", label: "Todos" },
+        { id: "Chest", label: "Pecho" },
+        { id: "Back", label: "Espalda" },
+        { id: "Legs", label: "Piernas" },
+        { id: "Shoulders", label: "Hombros" },
+        { id: "Arms", label: "Brazos" },
+        { id: "Core", label: "Core" },
+        { id: "Cardio", label: "Cardio" },
+    ];
+
+    const EQUIPMENT_LABELS: Record<string, string> = {
+        Barbell: "Barra",
+        Dumbbell: "Mancuerna",
+        Cable: "Polea",
+        Machine: "Máquina",
+        Bodyweight: "Peso Corporal",
+    };
+
+    const filteredCatalog = selectedCategory === "ALL"
+        ? exercises
+        : exercises.filter((ex) => ex.bodyPart?.toLowerCase() === selectedCategory.toLowerCase());
     
     // 🧠 ESTADOS DE ENTRENAMIENTO
     const [workoutLogs, setWorkoutLogs] = useState<Record<number, WorkoutSet[]>>({});
@@ -719,29 +743,64 @@ export default function WorkoutPanel({
             {/* 🔴 BUSCADOR DE EJERCICIOS */}
             <CommandDialog open={open} onOpenChange={setOpen}>
                 <Command className="bg-card dark:bg-[#121214] text-foreground border-border dark:border-white/10">
-                    <CommandInput placeholder="Buscar ejercicio en Kallp..." className="text-foreground" />
-                    <CommandList className="bg-card dark:bg-[#121214]">
-                        <CommandEmpty>No se encontraron resultados.</CommandEmpty>
-                        <CommandGroup heading="Ejercicios Disponibles" className="text-muted-foreground">
-                            {exercises.map((ex) => (
-                                <CommandItem 
-                                    key={ex.id} 
-                                    onSelect={() => addAccessory(ex)} 
-                                    className="cursor-pointer flex items-center gap-4 p-3 aria-selected:bg-accent dark:aria-selected:bg-blue-600/20 rounded-xl mb-1 transition-colors"
+                    <CommandInput placeholder="Buscar ejercicio, músculo o equipo (ej: banca, polea, hombro)..." className="text-foreground" />
+                    
+                    {/* Filtros rápidos por grupo muscular */}
+                    <div className="flex items-center gap-1.5 px-3 py-2.5 overflow-x-auto no-scrollbar border-b border-border dark:border-white/10 bg-muted/30 dark:bg-black/20">
+                        {BODY_PART_FILTERS.map((cat) => {
+                            const isActive = selectedCategory === cat.id;
+                            return (
+                                <button
+                                    key={cat.id}
+                                    type="button"
+                                    onClick={() => setSelectedCategory(cat.id)}
+                                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all ${
+                                        isActive
+                                            ? "bg-blue-600 text-white shadow-sm shadow-blue-500/30"
+                                            : "bg-card dark:bg-white/5 text-muted-foreground hover:text-foreground border border-border dark:border-white/10"
+                                    }`}
                                 >
-                                    <div className="w-20 h-14 bg-white rounded-lg overflow-hidden flex-shrink-0 relative border border-border dark:border-white/10 shadow-sm flex items-center justify-center">
-                                        {ex.gifUrl ? (
-                                            <img src={ex.gifUrl} alt={ex.name} loading="lazy" className="w-full h-full object-contain mix-blend-multiply" />
-                                        ) : (
-                                            <Dumbbell className="w-6 h-6 text-gray-300" />
-                                        )}
-                                    </div>
-                                    <div className="flex flex-col flex-grow">
-                                        <span className="uppercase text-xs font-black text-foreground">{ex.name}</span>
-                                        <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">{ex.target || ex.bodyPart}</span>
-                                    </div>
-                                </CommandItem>
-                            ))}
+                                    {cat.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <CommandList className="bg-card dark:bg-[#121214] max-h-[380px]">
+                        <CommandEmpty>No se encontraron ejercicios para tu búsqueda.</CommandEmpty>
+                        <CommandGroup heading={`Catálogo Kallp (${filteredCatalog.length} ejercicios)`} className="text-muted-foreground">
+                            {filteredCatalog.map((ex) => {
+                                const equipLabel = EQUIPMENT_LABELS[ex.equipment] || ex.equipment;
+                                return (
+                                    <CommandItem 
+                                        key={ex.id} 
+                                        value={`${ex.name} ${ex.target || ""} ${ex.bodyPart || ""} ${equipLabel || ""}`}
+                                        onSelect={() => addAccessory(ex)} 
+                                        className="cursor-pointer flex items-center gap-4 p-3 aria-selected:bg-accent dark:aria-selected:bg-blue-600/20 rounded-xl mb-1 transition-colors"
+                                    >
+                                        <div className="w-20 h-14 bg-white rounded-lg overflow-hidden flex-shrink-0 relative border border-border dark:border-white/10 shadow-sm flex items-center justify-center">
+                                            {ex.gifUrl ? (
+                                                <img src={ex.gifUrl} alt={ex.name} loading="lazy" className="w-full h-full object-contain mix-blend-multiply" />
+                                            ) : (
+                                                <Dumbbell className="w-6 h-6 text-gray-300" />
+                                            )}
+                                        </div>
+                                        <div className="flex flex-col flex-grow min-w-0">
+                                            <span className="uppercase text-xs font-black text-foreground truncate">{ex.name}</span>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider">
+                                                    {ex.target || ex.bodyPart}
+                                                </span>
+                                                {equipLabel && (
+                                                    <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-muted dark:bg-white/10 text-muted-foreground font-bold uppercase">
+                                                        {equipLabel}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </CommandItem>
+                                );
+                            })}
                         </CommandGroup>
                     </CommandList>
                 </Command>
