@@ -18,12 +18,17 @@ export default function MainLayoutWrapper({ children }: { children: React.ReactN
   const isViewPagerRoute = ['/', '/training', '/nutrition', '/analytics'].includes(pathname);
 
   return (
-    <div className="relative flex h-screen w-full bg-background md:bg-transparent overflow-hidden">
+    <div className="relative flex h-screen w-full bg-background overflow-hidden">
+      {/* Luces ambientales cósmicas para efecto Deep Space & Glassmorphism */}
+      <div className="pointer-events-none absolute -top-32 -left-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute top-1/4 -right-40 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 left-1/3 w-96 h-96 bg-cyan-600/10 rounded-full blur-3xl" />
+
       {/* MENÚ LATERAL FIJO A LA IZQUIERDA (SOLO DESKTOP) */}
       <Sidebar />
 
       {/* CONTENEDOR PRINCIPAL */}
-      <div className="flex-1 flex flex-col h-screen w-full relative">
+      <div className="flex-1 flex flex-col h-screen w-full relative z-10">
         {/* CABECERA MÓVIL (SOLO MOBILE) */}
         <MobileHeader />
 

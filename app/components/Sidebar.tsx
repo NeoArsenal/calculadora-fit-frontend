@@ -33,21 +33,22 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 hidden md:flex flex-col bg-background/40 backdrop-blur-xl border-r border-border h-screen z-50">
+    <aside className="w-64 hidden md:flex flex-col bg-background/50 backdrop-blur-2xl border-r border-white/10 dark:border-white/10 h-screen z-50 shadow-2xl">
       
       {/* 🔴 HEADER DEL SIDEBAR */}
-      <div className="h-24 flex items-center px-8">
-        <Link href="/">
-          <h1 className="text-3xl font-black text-foreground tracking-tighter hover:opacity-80 transition-opacity">
-            Kallp<span className="text-blue-500">:</span>
+      <div className="h-24 flex items-center px-8 border-b border-white/5">
+        <Link href="/" className="group flex items-center gap-2">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
+            <span className="text-white font-black text-lg">K</span>
+          </div>
+          <h1 className="text-2xl font-black text-foreground tracking-tighter group-hover:opacity-90 transition-opacity">
+            Kallp<span className="text-blue-500 group-hover:text-cyan-400 transition-colors">:</span>
           </h1>
         </Link>
       </div>
 
-      <Separator className="bg-border/50" />
-
       {/* 🔴 NAVEGACIÓN PRINCIPAL CON BOTONES SHADCN */}
-      <nav className="flex-1 py-8 px-4 space-y-2">
+      <nav className="flex-1 py-6 px-4 space-y-2">
         {routes.map((route) => {
           const isActive = pathname === route.href;
           const Icon = route.icon;
@@ -55,14 +56,14 @@ export default function Sidebar() {
           return (
             <Link key={route.href} href={route.href} className="block">
               <Button
-                variant={isActive ? "secondary" : "ghost"}
-                className={`w-full justify-start gap-4 h-12 text-md transition-all ${
+                variant="ghost"
+                className={`w-full justify-start gap-4 h-12 text-md transition-all duration-200 ${
                   isActive 
-                    ? "bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 hover:text-blue-400 border border-blue-500/20" 
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-gradient-to-r from-blue-600/20 to-indigo-600/10 text-blue-400 font-semibold border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)] translate-x-1" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5 hover:translate-x-0.5"
                 }`}
               >
-                <Icon size={20} />
+                <Icon size={20} className={isActive ? "text-blue-400" : "text-muted-foreground"} />
                 {route.name}
               </Button>
             </Link>
@@ -73,12 +74,12 @@ export default function Sidebar() {
           customTrigger={(unreadCount) => (
             <Button
               variant="ghost"
-              className="w-full justify-start gap-4 h-12 text-md transition-all text-muted-foreground hover:text-foreground"
+              className="w-full justify-start gap-4 h-12 text-md transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-white/5 hover:translate-x-0.5"
             >
               <div className="relative">
                 <Bell size={20} />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse"></span>
                 )}
               </div>
               Inteligencia
@@ -87,28 +88,29 @@ export default function Sidebar() {
         />
       </nav>
 
-      <Separator className="bg-border/50" />
-
       {/* 🔴 GAMIFICATION WIDGET */}
-      <div className="px-6 py-6">
-        <div className="bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-2xl p-4 space-y-4 shadow-sm">
-          <div className="flex items-center justify-between">
+      <div className="px-4 py-4">
+        <div className="glass-card rounded-2xl p-4 space-y-3.5 relative overflow-hidden group">
+          <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all duration-500" />
+          
+          <div className="flex items-center justify-between relative z-10">
             <div className="space-y-0.5">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Level {level}</p>
-              <p className="text-sm font-black italic text-gray-900 dark:text-white tracking-tight">{rankName}</p>
+              <p className="text-sm font-black italic text-foreground tracking-tight">{rankName}</p>
             </div>
-            <div className="h-8 w-8 rounded-full bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center border border-blue-200 dark:border-blue-500/30">
-              <span className="text-blue-600 dark:text-blue-400 font-black text-xs">{level}</span>
+            <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30 shadow-inner">
+              <span className="text-blue-400 font-black text-xs">{level}</span>
             </div>
           </div>
-          <div className="space-y-1.5">
+
+          <div className="space-y-1.5 relative z-10">
             <div className="flex justify-between text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
               <span>XP</span>
-              <span>{xp} / {nextLevelXp}</span>
+              <span className="text-foreground/80">{xp} / {nextLevelXp}</span>
             </div>
-            <div className="h-1.5 w-full bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
+            <div className="h-2 w-full bg-black/40 dark:bg-white/5 rounded-full overflow-hidden p-0.5 border border-white/5">
               <div 
-                className="h-full bg-blue-500 transition-all duration-1000 ease-out" 
+                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.6)] transition-all duration-1000 ease-out" 
                 style={{ width: `${progressPercentage}%` }} 
               />
             </div>
@@ -117,14 +119,14 @@ export default function Sidebar() {
       </div>
 
       {/* 🔴 FOOTER DEL SIDEBAR */}
-      <div className="p-4">
+      <div className="p-4 border-t border-white/5">
         <Button 
           variant="ghost" 
           onClick={logout}
-          className="w-full justify-start gap-4 h-12 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+          className="w-full justify-start gap-4 h-11 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
         >
-          <LogOut size={20} />
-          Logout
+          <LogOut size={18} />
+          Cerrar Sesión
         </Button>
       </div>
     </aside>

@@ -52,54 +52,63 @@ export default function RecordForm({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <Card className="border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/40 shadow-2xl backdrop-blur-md">
-      <CardHeader>
-        <CardTitle className="text-xl font-bold text-blue-500 dark:text-blue-400">Nuevo Registro Diario</CardTitle>
+    <Card className="glass-card border-white/10 dark:border-white/10 shadow-2xl relative overflow-hidden group">
+      <div className="pointer-events-none absolute -top-10 -right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/15 transition-all duration-500" />
+      
+      <CardHeader className="pb-4">
+        <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+          <span className="w-2 h-5 bg-gradient-to-b from-blue-500 to-indigo-600 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
+          Nuevo Registro Diario
+        </CardTitle>
       </CardHeader>
       
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* CAMPO: PESO */}
           <div className="grid gap-2">
-            <Label htmlFor="weight" className="text-sm text-gray-700 dark:text-gray-400">Peso Corporal (kg)</Label>
+            <Label htmlFor="weight" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Peso Corporal (kg)
+            </Label>
             <Input 
               id="weight"
               type="number" 
               step="0.1" 
               value={weight} 
               onChange={(e) => setWeight(e.target.value)}
-              className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white outline-none focus:border-blue-500" 
+              className="bg-white/5 dark:bg-white/5 border border-white/10 text-foreground placeholder:text-muted-foreground/60 rounded-xl h-11 focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/20 transition-all shadow-inner" 
               placeholder="Ej: 86.5"
-              disabled={isSubmitting} // Bloquear durante carga
+              disabled={isSubmitting}
             />
-            {errors.weightKg && <span className="text-red-500 dark:text-red-400 text-[10px]">{errors.weightKg}</span>}
+            {errors.weightKg && <span className="text-rose-400 text-[10px] font-semibold">{errors.weightKg}</span>}
           </div>
 
           {/* CAMPO: CINTURA */}
           <div className="grid gap-2">
-            <Label htmlFor="waist" className="text-sm text-gray-700 dark:text-gray-400">Circunferencia Cintura (cm)</Label>
+            <Label htmlFor="waist" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Circunferencia Cintura (cm)
+            </Label>
             <Input 
               id="waist"
               type="number" 
               step="0.1" 
               value={waist} 
               onChange={(e) => setWaist(e.target.value)}
-              className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white outline-none focus:border-blue-500" 
+              className="bg-white/5 dark:bg-white/5 border border-white/10 text-foreground placeholder:text-muted-foreground/60 rounded-xl h-11 focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/20 transition-all shadow-inner" 
               placeholder="Ej: 90"
-              disabled={isSubmitting} // Bloquear durante carga
+              disabled={isSubmitting}
             />
-            {errors.waistCircumferenceCm && <span className="text-red-500 dark:text-red-400 text-[10px]">{errors.waistCircumferenceCm}</span>}
+            {errors.waistCircumferenceCm && <span className="text-rose-400 text-[10px] font-semibold">{errors.waistCircumferenceCm}</span>}
           </div>
 
-          {/* BOTÓN CON ESTADO DE CARGA (UX PROFESIONAL) */}
+          {/* BOTÓN CON ESTADO DE CARGA */}
           <Button 
             type="submit" 
-            className="w-full bg-blue-600 hover:bg-blue-500 font-bold"
-            disabled={isSubmitting} // Bloquear clic múltiple
+            className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold tracking-wide shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_25px_rgba(59,130,246,0.5)] transition-all duration-200 active:scale-[0.98]"
+            disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {/* Spinner giratorio */}
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Guardando...
               </>
             ) : (

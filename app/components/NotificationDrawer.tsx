@@ -125,11 +125,11 @@ export default function NotificationDrawer({ customTrigger }: { customTrigger?: 
           </button>
         )}
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md bg-white dark:bg-[#0a0a0b] border-l-0 sm:border-l border-gray-200 dark:border-white/10 p-0 flex flex-col z-50">
-        <SheetHeader className="p-6 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
-          <SheetTitle className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2">
+      <SheetContent className="w-full sm:max-w-md glass-panel border-l-0 sm:border-l border-white/10 p-0 flex flex-col z-50 backdrop-blur-2xl shadow-2xl">
+        <SheetHeader className="p-6 border-b border-white/5 bg-white/[0.02]">
+          <SheetTitle className="text-xl font-black text-foreground flex items-center gap-2.5 tracking-tight">
             Panel de Inteligencia
-            <span className="bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 text-xs px-2 py-0.5 rounded-full font-bold">
+            <span className="bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs px-2.5 py-0.5 rounded-full font-bold shadow-inner">
               {unreadCount} nuevas
             </span>
           </SheetTitle>
@@ -137,45 +137,47 @@ export default function NotificationDrawer({ customTrigger }: { customTrigger?: 
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {notifications.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-50">
-              <Bot size={48} className="mb-4 text-gray-400" />
-              <p className="font-semibold text-gray-600 dark:text-gray-300">Todo al día, {userProfile?.name?.split(' ')[0] || 'Atleta'}</p>
-              <p className="text-sm text-gray-500 mt-2">Kallp AI está analizando tus datos en segundo plano.</p>
+            <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-60">
+              <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 text-muted-foreground">
+                <Bot size={32} />
+              </div>
+              <p className="font-bold text-foreground">Todo al día, {userProfile?.name?.split(' ')[0] || 'Atleta'}</p>
+              <p className="text-xs text-muted-foreground mt-1.5 max-w-[240px]">Kallp AI está analizando tus datos en segundo plano.</p>
             </div>
           ) : (
             notifications.map((notif) => (
               <div 
                 key={notif.id} 
-                className="relative bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow group"
+                className="relative glass-card border-white/10 p-4 rounded-2xl shadow-lg hover:border-blue-500/30 transition-all duration-300 group"
               >
                 <button 
                   onClick={() => dismissNotification(notif.id)}
-                  className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                  className="absolute top-3.5 right-3.5 text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-white/5"
                 >
-                  <X size={16} />
+                  <X size={15} />
                 </button>
                 
-                <div className="flex items-start gap-4">
-                  <div className={`p-2 rounded-xl flex-shrink-0 ${
-                    notif.type === 'ai' ? 'bg-purple-100 dark:bg-purple-500/10' :
-                    notif.type === 'nutrition' ? 'bg-yellow-100 dark:bg-yellow-500/10' :
-                    'bg-green-100 dark:bg-green-500/10'
+                <div className="flex items-start gap-3.5">
+                  <div className={`p-2.5 rounded-xl flex-shrink-0 border shadow-inner ${
+                    notif.type === 'ai' ? 'bg-purple-500/15 text-purple-400 border-purple-500/20 shadow-[0_0_12px_rgba(168,85,247,0.2)]' :
+                    notif.type === 'nutrition' ? 'bg-amber-500/15 text-amber-400 border-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.2)]' :
+                    'bg-emerald-500/15 text-emerald-400 border-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
                   }`}>
                     {getIconForType(notif.type)}
                   </div>
-                  <div className="flex-1 pr-6">
-                    <h4 className="font-bold text-gray-900 dark:text-gray-100 text-sm mb-1">{notif.title}</h4>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+                  <div className="flex-1 pr-5">
+                    <h4 className="font-bold text-foreground text-sm mb-1">{notif.title}</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-3">
                       {notif.description}
                     </p>
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-gray-400 font-medium">{formatTimeAgo(notif.createdAt)}</span>
+                      <span className="text-[10px] text-muted-foreground/80 font-medium">{formatTimeAgo(notif.createdAt)}</span>
                       <button 
                         onClick={() => handleActionClick(notif.type, notif.id)}
-                        className={`text-xs font-bold px-3 py-1.5 rounded-full transition-colors active:scale-95 ${
-                        notif.type === 'ai' ? 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-500/30' :
-                        notif.type === 'nutrition' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400 hover:bg-yellow-200 dark:hover:bg-yellow-500/30' :
-                        'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-500/30'
+                        className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all active:scale-95 border ${
+                        notif.type === 'ai' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30 hover:bg-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.2)]' :
+                        notif.type === 'nutrition' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30 hover:bg-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]' :
+                        'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
                       }`}>
                         {notif.actionText}
                       </button>

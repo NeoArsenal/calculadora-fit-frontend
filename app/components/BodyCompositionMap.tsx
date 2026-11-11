@@ -67,25 +67,30 @@ export default function BodyCompositionMap({ records, onSelectPart, onRefresh }:
   };
 
   return (
-    <Card className="bg-white dark:bg-gray-900/40 backdrop-blur-md border border-gray-200 dark:border-gray-800 shadow-2xl p-5 col-span-1 lg:col-span-2">
-      <CardContent className="p-0 flex flex-col items-center">
+    <Card className="glass-card border-white/10 dark:border-white/10 shadow-2xl p-6 col-span-1 lg:col-span-2 relative overflow-hidden group">
+      <div className="pointer-events-none absolute -top-16 -left-16 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl group-hover:bg-blue-600/15 transition-all duration-500" />
+      
+      <CardContent className="p-0 flex flex-col items-center relative z-10">
         {/* Header con Estado */}
         <div className="w-full flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2 tracking-tight">
-            <User className="text-blue-500" size={22} />
+          <h3 className="text-lg font-bold text-foreground flex items-center gap-2.5 tracking-tight">
+            <div className="p-2 rounded-xl bg-blue-500/15 text-blue-400 border border-blue-500/20 shadow-inner">
+              <User size={18} />
+            </div>
             Mapa de Composición Corporal
           </h3>
-          <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/40 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-900/40">
-            Escaneo: OK
-          </p>
+          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+            Escaneo: Online
+          </div>
         </div>
 
         {/* --- EL MODELO SIMULADO --- */}
-        <div className="relative w-full h-[480px] lg:h-[500px] rounded-3xl overflow-hidden shadow-2xl border border-gray-200 dark:border-white/10 group">
+        <div className="relative w-full h-[480px] lg:h-[500px] rounded-3xl overflow-hidden shadow-2xl border border-white/10 group/scanner">
           
-          {/* Fondo Espacial/Cyberpunk con Grid (Soporte Light/Dark) */}
-          <div className="absolute inset-0 bg-gradient-to-b from-blue-50 via-white to-gray-50 dark:from-[#0f172a] dark:via-[#020617] dark:to-[#000000] z-0" />
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.05)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)] z-0" />
+          {/* Fondo Espacial Deep Space con Grid */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f1d] via-[#060810] to-[#020307] z-0" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.06)_1px,transparent_1px)] bg-[size:36px_36px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_30%,transparent_100%)] z-0" />
 
           {/* 🔥 CANVAS 3D */}
           <div className="relative z-10 w-full h-full">
@@ -94,49 +99,49 @@ export default function BodyCompositionMap({ records, onSelectPart, onRefresh }:
 
           {/* Efectos de escaneo en los bordes */}
           <div className="absolute inset-0 pointer-events-none border border-blue-500/20 rounded-3xl z-20" />
-          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000 z-20 pointer-events-none" />
+          <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-blue-500/10 to-transparent opacity-0 group-hover/scanner:opacity-100 transition-opacity duration-1000 z-20 pointer-events-none" />
 
           {/* UI encima: PESO ACTUAL (Glassmorphism) */}
-          <div className="absolute top-2 md:top-6 right-2 md:right-6 z-30 bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-white/10 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(59,130,246,0.15)] flex flex-col items-end transform transition-transform hover:scale-105">
-            <div className="flex items-center gap-1 md:gap-2 mb-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
-              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-blue-600 dark:text-blue-300 uppercase">Peso Actual</p>
+          <div className="absolute top-3 md:top-6 right-3 md:right-6 z-30 bg-black/50 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-3 md:p-4 shadow-[0_0_25px_rgba(59,130,246,0.2)] flex flex-col items-end transform transition-all hover:scale-105">
+            <div className="flex items-center gap-1.5 md:gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+              <p className="text-[9px] md:text-[10px] font-black tracking-widest text-blue-400 uppercase">Peso Actual</p>
             </div>
-            <p className="text-xl md:text-4xl font-black italic text-gray-900 dark:text-white tracking-tighter">
-              {weight} <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">kg</span>
+            <p className="text-xl md:text-3xl font-black italic text-foreground tracking-tighter">
+              {weight} <span className="text-xs md:text-sm font-medium text-muted-foreground">kg</span>
             </p>
           </div>
 
           {/* UI encima: GRASA CORPORAL (Glassmorphism) */}
-          <div className="absolute top-2 md:top-6 left-2 md:left-6 z-30 bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-orange-500/20 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(249,115,22,0.15)] flex flex-col items-start transform transition-transform hover:scale-105">
-            <div className="flex items-center gap-1 md:gap-2 mb-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-orange-500 dark:bg-orange-400 animate-pulse" />
-              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-orange-600 dark:text-orange-400 uppercase">Grasa Corporal</p>
+          <div className="absolute top-3 md:top-6 left-3 md:left-6 z-30 bg-black/50 backdrop-blur-xl border border-orange-500/30 rounded-2xl p-3 md:p-4 shadow-[0_0_25px_rgba(249,115,22,0.2)] flex flex-col items-start transform transition-all hover:scale-105">
+            <div className="flex items-center gap-1.5 md:gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse shadow-[0_0_8px_rgba(251,146,60,0.8)]" />
+              <p className="text-[9px] md:text-[10px] font-black tracking-widest text-orange-400 uppercase">Grasa Corporal</p>
             </div>
-            <p className="text-xl md:text-4xl font-black italic text-gray-900 dark:text-white tracking-tighter">
-              {bodyFat} <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">%</span>
+            <p className="text-xl md:text-3xl font-black italic text-foreground tracking-tighter">
+              {bodyFat} <span className="text-xs md:text-sm font-medium text-muted-foreground">%</span>
             </p>
           </div>
 
           {/* UI encima: CINTURA (Glassmorphism) */}
-          <div className="absolute bottom-2 md:bottom-10 left-2 md:left-6 z-30 bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-emerald-500/20 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(16,185,129,0.15)] flex flex-col items-start transform transition-transform hover:scale-105">
-            <div className="flex items-center gap-1 md:gap-2 mb-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
-              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-emerald-600 dark:text-emerald-400 uppercase">Cintura</p>
+          <div className="absolute bottom-3 md:bottom-8 left-3 md:left-6 z-30 bg-black/50 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-3 md:p-4 shadow-[0_0_25px_rgba(16,185,129,0.2)] flex flex-col items-start transform transition-all hover:scale-105">
+            <div className="flex items-center gap-1.5 md:gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+              <p className="text-[9px] md:text-[10px] font-black tracking-widest text-emerald-400 uppercase">Cintura</p>
             </div>
-            <p className="text-xl md:text-4xl font-black italic text-gray-900 dark:text-white tracking-tighter">
-              {waist} <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">cm</span>
+            <p className="text-xl md:text-3xl font-black italic text-foreground tracking-tighter">
+              {waist} <span className="text-xs md:text-sm font-medium text-muted-foreground">cm</span>
             </p>
           </div>
 
           {/* UI encima: ÍNDICE IMC (Glassmorphism) */}
-          <div className="absolute bottom-2 md:bottom-10 right-2 md:right-6 z-30 bg-white/60 dark:bg-white/5 backdrop-blur-md border border-gray-200 dark:border-purple-500/20 rounded-xl md:rounded-2xl p-2 md:p-4 shadow-[0_0_30px_rgba(168,85,247,0.15)] flex flex-col items-end transform transition-transform hover:scale-105">
-            <div className="flex items-center gap-1 md:gap-2 mb-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-purple-500 dark:bg-purple-400 animate-pulse" />
-              <p className="text-[8px] md:text-[10px] font-black tracking-widest text-purple-600 dark:text-purple-400 uppercase">Índice IMC</p>
+          <div className="absolute bottom-3 md:bottom-8 right-3 md:right-6 z-30 bg-black/50 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-3 md:p-4 shadow-[0_0_25px_rgba(168,85,247,0.2)] flex flex-col items-end transform transition-all hover:scale-105">
+            <div className="flex items-center gap-1.5 md:gap-2 mb-1">
+              <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse shadow-[0_0_8px_rgba(192,132,252,0.8)]" />
+              <p className="text-[9px] md:text-[10px] font-black tracking-widest text-purple-400 uppercase">Índice IMC</p>
             </div>
-            <p className="text-xl md:text-4xl font-black italic text-gray-900 dark:text-white tracking-tighter">
-              {bmi} <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400">pts</span>
+            <p className="text-xl md:text-3xl font-black italic text-foreground tracking-tighter">
+              {bmi} <span className="text-xs md:text-sm font-medium text-muted-foreground">pts</span>
             </p>
           </div>
         </div>
@@ -145,10 +150,11 @@ export default function BodyCompositionMap({ records, onSelectPart, onRefresh }:
         <button
           onClick={handleScan}
           disabled={isScanning}
-          className={`w-full mt-6 font-black uppercase tracking-widest text-[11px] py-4 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-lg active:scale-95 ${isScanning
-              ? 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-muted-foreground cursor-not-allowed shadow-none'
-              : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/25 border border-blue-500/50'
-            }`}
+          className={`w-full mt-6 font-black uppercase tracking-widest text-[11px] py-4 rounded-2xl flex items-center justify-center gap-3 transition-all duration-200 active:scale-[0.98] ${
+            isScanning
+              ? 'bg-white/5 text-muted-foreground cursor-not-allowed border border-white/5'
+              : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-[0_0_25px_rgba(59,130,246,0.35)] border border-blue-400/30'
+          }`}
         >
           {isScanning ? (
             <>
