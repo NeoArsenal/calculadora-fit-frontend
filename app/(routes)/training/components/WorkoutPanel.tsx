@@ -427,14 +427,12 @@ export default function WorkoutPanel({
 
             return {
                 exerciseId: ex.id,
-                setsDone: completedSets.length > 0 ? completedSets.length : 1,
+                exerciseName: ex.name,
+                setsDone: completedSets.length,
                 repsDone: bestReps > 0 ? bestReps : 10,
-                weightUsed: maxWeight,
-                totalVolume: completedSets.reduce((acc, curr) => 
-                    acc + (parseFloat(String(curr.weight)) || 0) * (parseInt(String(curr.reps), 10) || 0), 0
-                )
+                weightUsed: maxWeight
             };
-        });
+        }).filter(ex => ex.setsDone > 0);
 
         if (finalData.length === 0) {
             toast.error("No has completado ninguna serie de ejercicio.");
@@ -443,25 +441,23 @@ export default function WorkoutPanel({
 
         setIsSaving(true);
         try {
-            const token = localStorage.getItem("token");
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://calculadorafit-backend-bda6fge5d3h7bddz.eastus2-01.azurewebsites.net"}/workout-sessions`, {
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+            const payload = {
+                workoutDate: new Date().toISOString().slice(0, 19),
+                routineId: initialRoutine?.id || null,
+                exerciseLogs: finalData
+            };
+
+            const response = await fetch(`${baseUrl}/workout-sessions`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { "Authorization": `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify({
-                    date: new Date().toISOString(),
-                    name: initialRoutine ? initialRoutine.name : "Sesión de Entrenamiento",
-                    durationMinutes: Math.max(1, Math.round(elapsedSeconds / 60)),
-                    logs: finalData
-                })
+                headers: getAuthHeaders(true),
+                body: JSON.stringify(payload)
             });
 
             if (response.ok) {
                 playChime();
-                gainXp(100);
-                toast.success("¡Entrenamiento guardado con éxito! +100 XP 🏆");
+                gainXp(20);
+                toast.success("¡Entrenamiento guardado con éxito! 🏆");
                 await refreshEcosystem();
                 onFinish();
             } else {
