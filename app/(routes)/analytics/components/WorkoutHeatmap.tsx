@@ -8,22 +8,22 @@ export default function WorkoutHeatmap() {
 
   const days = useMemo(() => {
     const data = [];
-    const weeks = 26; // 6 meses
+    const weeks = 20; // Últimos ~5 meses compactos sin scroll excesivo
     const daysInWeek = 7;
     const totalDays = weeks * daysInWeek;
     
-    const trainingDates = new Map();
+    const trainingDates = new Map<string, number>();
     if (trainingSessions) {
       trainingSessions.forEach((session: any) => {
-        if (session.date) {
-           const dateStr = new Date(session.date).toDateString();
-           trainingDates.set(dateStr, (trainingDates.get(dateStr) || 0) + 1);
+        const rawDate = session.workoutDate || session.date || session.startTime;
+        if (rawDate) {
+          const dateStr = new Date(rawDate).toDateString();
+          trainingDates.set(dateStr, (trainingDates.get(dateStr) || 0) + 1);
         }
       });
     }
 
     const today = new Date();
-    // Start totalDays ago
     for (let i = totalDays - 1; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
@@ -32,7 +32,7 @@ export default function WorkoutHeatmap() {
       
       let intensity = 0;
       if (sessionsCount > 0) {
-          intensity = Math.min(4, sessionsCount + 1);
+        intensity = Math.min(4, sessionsCount + 1);
       }
       
       const formattedDate = d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -46,7 +46,6 @@ export default function WorkoutHeatmap() {
     const uniqueMonths = new Set<string>();
     days.forEach(day => {
       const monthName = day.date.toLocaleDateString('es-ES', { month: 'short' });
-      // Capitalizar la primera letra del mes
       uniqueMonths.add(monthName.charAt(0).toUpperCase() + monthName.slice(1));
     });
     return Array.from(uniqueMonths);
@@ -54,21 +53,19 @@ export default function WorkoutHeatmap() {
 
   const getColor = (intensity: number) => {
     switch (intensity) {
-      case 1: return "bg-blue-500/20 shadow-[inset_0_0_2px_rgba(59,130,246,0.3)]";
-      case 2: return "bg-blue-500/50 shadow-[0_0_5px_rgba(59,130,246,0.4)]";
+      case 1: return "bg-blue-500/25 shadow-[inset_0_0_2px_rgba(59,130,246,0.3)]";
+      case 2: return "bg-blue-500/60 shadow-[0_0_5px_rgba(59,130,246,0.4)]";
       case 3: return "bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)]";
-      case 4: return "bg-white shadow-[0_0_12px_rgba(255,255,255,0.8)]";
-      default: return "bg-gray-200 dark:bg-white/5"; 
+      case 4: return "bg-blue-300 dark:bg-white shadow-[0_0_12px_rgba(59,130,246,0.8)]";
+      default: return "bg-gray-200/80 dark:bg-white/5"; 
     }
   };
 
-return (
-    // ⚡️ Ocultar scrollbar nativo para que el scroll horizontal se vea mucho más limpio
-    <div className="w-full flex justify-center overflow-x-auto pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-      
-      <div className="flex">
+  return (
+    <div className="w-full flex justify-center overflow-x-auto py-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex items-center">
         {/* 1. ETIQUETAS DE DÍAS */}
-        <div className="flex flex-col justify-between text-[9px] font-bold text-muted-foreground mr-4 py-[2px] h-[140px] uppercase">
+        <div className="flex flex-col justify-between text-[9px] font-bold text-muted-foreground mr-3 py-[2px] h-[116px] uppercase">
           <span>Lun</span>
           <span>Mié</span>
           <span>Vie</span>
@@ -77,7 +74,6 @@ return (
 
         {/* 2. CONTENEDOR PRINCIPAL */}
         <div className="flex flex-col gap-2 min-w-max">
-          
           {/* ETIQUETAS DE MESES */}
           <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">
             {months.map((month, index) => (
@@ -85,20 +81,18 @@ return (
             ))}
           </div>
 
-          {/* ⚡️ EL GRID MÁGICO (Ahora con círculos perfectos) */}
+          {/* GRID COMPACTO */}
           <div className="grid grid-rows-7 grid-flow-col gap-[4px]">
             {days.map((day) => (
               <div
                 key={day.id}
-                className={`w-[14px] h-[14px] rounded-full transition-all duration-300 hover:ring-2 hover:ring-white/50 cursor-pointer hover:scale-125 z-0 hover:z-10 ${getColor(day.intensity)}`}
+                className={`w-[12px] h-[12px] sm:w-[14px] sm:h-[14px] rounded-[4px] transition-all duration-200 hover:ring-2 hover:ring-blue-400 cursor-pointer hover:scale-125 z-0 hover:z-10 ${getColor(day.intensity)}`}
                 title={`${day.formattedDate}: ${day.sessionsCount === 0 ? 'Sin entrenamiento' : day.sessionsCount + ' sesión(es)'}`}
-              ></div>
+              />
             ))}
           </div>
-          
         </div>
       </div>
-      
     </div>
   );
 }
