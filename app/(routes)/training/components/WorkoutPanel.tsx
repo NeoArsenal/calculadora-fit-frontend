@@ -430,7 +430,13 @@ export default function WorkoutPanel({
                 exerciseName: ex.name,
                 setsDone: completedSets.length,
                 repsDone: bestReps > 0 ? bestReps : 10,
-                weightUsed: maxWeight
+                weightUsed: maxWeight,
+                sets: completedSets.map((s, idx) => ({
+                    setNumber: idx + 1,
+                    weightKg: parseFloat(String(s.weight)) || 0,
+                    reps: parseInt(String(s.reps), 10) || 0,
+                    completed: true
+                }))
             };
         }).filter(ex => ex.setsDone > 0);
 
