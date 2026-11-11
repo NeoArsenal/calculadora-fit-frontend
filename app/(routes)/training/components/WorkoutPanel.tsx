@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useTransform } from "framer-motion";
 import { 
     Plus, CheckCircle2, Check, Dumbbell, Trash2, FastForward, 
     ChevronLeft, MoreVertical, Clock, Bookmark, Flame 
@@ -25,6 +25,136 @@ type WorkoutSet = {
     reps: string;
     completed: boolean;
 };
+
+// ⚡ FILA DE SERIE DESLIZABLE (Swipe to Delete sin sangrado de borde rojo)
+function SwipeableSetRow({
+    set,
+    setIdx,
+    exId,
+    previousRecord,
+    isPR,
+    isSaving,
+    onUpdateSet,
+    onRemoveSet,
+}: {
+    set: WorkoutSet;
+    setIdx: number;
+    exId: number;
+    previousRecord: string;
+    isPR: boolean;
+    isSaving: boolean;
+    onUpdateSet: (field: keyof WorkoutSet, value: string | boolean) => void;
+    onRemoveSet: () => void;
+}) {
+    const x = useMotionValue(0);
+    // En reposo (x entre 0 y -8px) la opacidad es estrictamente 0: jamás se verá un borde rojo
+    const bgOpacity = useTransform(x, [0, -8, -50], [0, 0, 1]);
+    const iconScale = useTransform(x, [-15, -75], [0.75, 1.05]);
+
+    return (
+        <div className="relative overflow-hidden rounded-2xl">
+            {/* Capa roja trasera: invisible en reposo y con inset-[2px] para nunca sobresalir del borde */}
+            <motion.div
+                style={{ opacity: bgOpacity }}
+                className="pointer-events-none absolute inset-[2px] bg-rose-600 rounded-xl flex items-center justify-end px-5 z-0"
+            >
+                <motion.div
+                    style={{ scale: iconScale }}
+                    className="flex items-center gap-1.5 text-white font-bold text-xs"
+                >
+                    <Trash2 size={16} />
+                    <span>Eliminar</span>
+                </motion.div>
+            </motion.div>
+
+            {/* Fila frontal con fondo sólido opaco para tapar por completo la capa trasera */}
+            <motion.div
+                style={{ x }}
+                drag="x"
+                dragDirectionLock
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={{ left: 0.65, right: 0 }}
+                onDragEnd={(_, info) => {
+                    if (info.offset.x < -75 || info.velocity.x < -400) {
+                        onRemoveSet();
+                    }
+                }}
+                className={`relative z-10 grid grid-cols-12 gap-2 items-center p-2 rounded-2xl border transition-colors ${
+                    set.completed
+                        ? 'bg-[#e8fbf3] dark:bg-[#0d221c] border-emerald-500/30'
+                        : 'bg-[#f8fafc] dark:bg-[#18181b] border-border dark:border-white/5'
+                }`}
+            >
+                {/* SERIE (Píldora) */}
+                <div className="col-span-2 flex justify-center">
+                    <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black border ${
+                        set.completed 
+                            ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40' 
+                            : setIdx === 0 
+                                ? 'bg-blue-600/15 text-blue-600 dark:text-blue-400 border-blue-500/30' 
+                                : 'bg-muted dark:bg-white/5 text-muted-foreground border-border dark:border-white/10'
+                    }`}>
+                        {setIdx + 1}
+                    </span>
+                </div>
+
+                {/* ANTERIOR */}
+                <div className="col-span-3 text-center text-xs font-semibold text-muted-foreground truncate">
+                    {previousRecord}
+                </div>
+
+                {/* KG INPUT */}
+                <div className="col-span-3 relative flex items-center justify-center">
+                    <input 
+                        type="number" 
+                        step="0.5"
+                        placeholder="-"
+                        value={set.weight}
+                        onChange={(e) => onUpdateSet('weight', e.target.value)}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        disabled={set.completed || isSaving}
+                        className="w-full bg-background dark:bg-black/40 border border-border dark:border-white/10 rounded-xl text-center text-sm font-black text-foreground py-2 outline-none focus:border-blue-500 transition-all shadow-inner disabled:opacity-50" 
+                    />
+                    {isPR && (
+                        <span className="absolute -top-2 -right-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full shadow-lg pointer-events-none">
+                            PR
+                        </span>
+                    )}
+                </div>
+
+                {/* REPS INPUT */}
+                <div className="col-span-2 flex items-center justify-center">
+                    <input 
+                        type="number" 
+                        placeholder="-"
+                        value={set.reps}
+                        onChange={(e) => onUpdateSet('reps', e.target.value)}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        disabled={set.completed || isSaving}
+                        className="w-full bg-background dark:bg-black/40 border border-border dark:border-white/10 rounded-xl text-center text-sm font-black text-foreground py-2 outline-none focus:border-blue-500 transition-all shadow-inner disabled:opacity-50" 
+                    />
+                </div>
+
+                {/* HECHO CHECKBOX */}
+                <div className="col-span-2 flex justify-center">
+                    <button 
+                        onClick={() => onUpdateSet('completed', !set.completed)}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        disabled={isSaving}
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90 ${
+                            set.completed 
+                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
+                                : 'bg-muted/60 dark:bg-black/40 border border-border dark:border-white/10 text-muted-foreground hover:border-blue-500/40 hover:text-foreground'
+                        }`}
+                        title="Marcar serie completada"
+                    >
+                        <Check size={18} strokeWidth={3} />
+                    </button>
+                </div>
+            </motion.div>
+        </div>
+    );
+}
 
 export default function WorkoutPanel({ 
     onFinish, 
@@ -488,78 +618,17 @@ export default function WorkoutPanel({
                                         const isPR = currentWeight > 0 && (currentPR === 0 || currentWeight >= currentPR);
 
                                         return (
-                                            <div 
+                                            <SwipeableSetRow
                                                 key={setIdx}
-                                                className={`grid grid-cols-12 gap-2 items-center p-2 rounded-2xl border transition-all ${
-                                                    set.completed 
-                                                        ? 'bg-emerald-500/10 dark:bg-emerald-950/20 border-emerald-500/30' 
-                                                        : 'bg-muted/40 dark:bg-white/[0.03] border-border dark:border-white/5'
-                                                }`}
-                                            >
-                                                {/* SERIE (Píldora) */}
-                                                <div className="col-span-2 flex justify-center">
-                                                    <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black border ${
-                                                        set.completed 
-                                                            ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40' 
-                                                            : setIdx === 0 
-                                                                ? 'bg-blue-600/15 text-blue-600 dark:text-blue-400 border-blue-500/30' 
-                                                                : 'bg-muted dark:bg-white/5 text-muted-foreground border-border dark:border-white/10'
-                                                    }`}>
-                                                        {setIdx + 1}
-                                                    </span>
-                                                </div>
-
-                                                {/* ANTERIOR */}
-                                                <div className="col-span-3 text-center text-xs font-semibold text-muted-foreground truncate">
-                                                    {previousRecord}
-                                                </div>
-
-                                                {/* KG INPUT */}
-                                                <div className="col-span-3 relative flex items-center justify-center">
-                                                    <input 
-                                                        type="number" 
-                                                        step="0.5"
-                                                        placeholder="-"
-                                                        value={set.weight}
-                                                        onChange={(e) => updateSet(ex.id, setIdx, 'weight', e.target.value)}
-                                                        disabled={set.completed || isSaving}
-                                                        className="w-full bg-background dark:bg-black/40 border border-border dark:border-white/10 rounded-xl text-center text-sm font-black text-foreground py-2 outline-none focus:border-blue-500 transition-all shadow-inner disabled:opacity-50" 
-                                                    />
-                                                    {isPR && (
-                                                        <span className="absolute -top-2 -right-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full shadow-lg pointer-events-none">
-                                                            PR
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                {/* REPS INPUT */}
-                                                <div className="col-span-2 flex items-center justify-center">
-                                                    <input 
-                                                        type="number" 
-                                                        placeholder="-"
-                                                        value={set.reps}
-                                                        onChange={(e) => updateSet(ex.id, setIdx, 'reps', e.target.value)}
-                                                        disabled={set.completed || isSaving}
-                                                        className="w-full bg-background dark:bg-black/40 border border-border dark:border-white/10 rounded-xl text-center text-sm font-black text-foreground py-2 outline-none focus:border-blue-500 transition-all shadow-inner disabled:opacity-50" 
-                                                    />
-                                                </div>
-
-                                                {/* HECHO CHECKBOX */}
-                                                <div className="col-span-2 flex justify-center">
-                                                    <button 
-                                                        onClick={() => updateSet(ex.id, setIdx, 'completed', !set.completed)}
-                                                        disabled={isSaving}
-                                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-90 ${
-                                                            set.completed 
-                                                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' 
-                                                                : 'bg-muted/60 dark:bg-black/40 border border-border dark:border-white/10 text-muted-foreground hover:border-blue-500/40 hover:text-foreground'
-                                                        }`}
-                                                        title="Marcar serie completada"
-                                                    >
-                                                        <Check size={18} strokeWidth={3} />
-                                                    </button>
-                                                </div>
-                                            </div>
+                                                set={set}
+                                                setIdx={setIdx}
+                                                exId={ex.id}
+                                                previousRecord={previousRecord}
+                                                isPR={isPR}
+                                                isSaving={isSaving}
+                                                onUpdateSet={(field, value) => updateSet(ex.id, setIdx, field, value)}
+                                                onRemoveSet={() => removeSet(ex.id, setIdx)}
+                                            />
                                         );
                                     })}
 
