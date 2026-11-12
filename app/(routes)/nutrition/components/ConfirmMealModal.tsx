@@ -180,8 +180,10 @@ export default function ConfirmMealModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[110] bg-black/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-[#0f0f13] border border-white/10 w-full max-w-lg rounded-[2.2rem] p-5 sm:p-7 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200 my-auto max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-[110] bg-black/85 backdrop-blur-xl flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-[#0f0f13] border-t sm:border border-white/10 w-full max-w-lg rounded-t-[2.2rem] sm:rounded-[2.2rem] p-5 sm:p-7 space-y-4 shadow-2xl animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 max-h-[92dvh] flex flex-col">
+        {/* Handle bar en móvil */}
+        <div className="w-10 h-1 rounded-full bg-white/15 mx-auto sm:hidden shrink-0" />
         {/* HEADER: CATEGORÍA, CONFIANZA Y NOMBRE DEL PLATO */}
         <div className="space-y-2 shrink-0">
           <div className="flex items-center justify-between gap-2">

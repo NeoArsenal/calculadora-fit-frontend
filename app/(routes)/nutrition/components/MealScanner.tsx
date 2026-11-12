@@ -4,14 +4,14 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import {
   Camera,
   X,
-  Zap,
   Loader2,
   ImagePlus,
   Sparkles,
   Search,
   Utensils,
-  MessageSquarePlus,
+  SlidersHorizontal,
   ChevronRight,
+  SwitchCamera,
 } from "lucide-react";
 import {
   scanMeal,
@@ -29,9 +29,9 @@ interface Props {
 const QUICK_CONTEXT_CHIPS = [
   "Casero (poco aceite)",
   "De restaurante",
-  "Sin cremas / salsas",
-  "Parte pecho (magro)",
-  "Con cremas (huancaína/mayonesa)",
+  "Sin cremas",
+  "Parte pecho",
+  "Con cremas",
   "Porción grande",
 ];
 
@@ -43,26 +43,31 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
   const [mode, setMode] = useState<"camera" | "peruvian" | "text">("camera");
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  // Contexto opcional para mejorar la precisión de la IA en fotos
+  // Contexto opcional compacto
   const [contextHint, setContextHint] = useState("");
+  const [showCustomNote, setShowCustomNote] = useState(false);
 
   // Buscador de platos peruanos y modo texto IA
   const [searchQuery, setSearchQuery] = useState("");
   const [textDescription, setTextDescription] = useState("");
 
   const stopCamera = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
-    }
+    setStream((prevStream) => {
+      if (prevStream) {
+        prevStream.getTracks().forEach((track) => track.stop());
+      }
+      return null;
+    });
     setIsCameraActive(false);
-  }, [stream]);
+  }, []);
 
-  const startCamera = async () => {
+  const startCamera = useCallback(async () => {
     setPreviewUrl(null);
+    setCameraError(false);
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -74,23 +79,28 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
       setStream(mediaStream);
       setIsCameraActive(true);
     } catch (err) {
-      toast.error("No se pudo acceder a la cámara. Puedes subir una foto de tu galería.");
+      setCameraError(true);
+      setIsCameraActive(false);
     }
-  };
+  }, []);
+
+  // Auto-iniciar cámara al abrir en modo "camera"
+  useEffect(() => {
+    if (mode === "camera" && !previewUrl) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    return () => {
+      stopCamera();
+    };
+  }, [mode, startCamera, stopCamera, previewUrl]);
 
   useEffect(() => {
     if (isCameraActive && videoRef.current && stream) {
       videoRef.current.srcObject = stream;
     }
   }, [isCameraActive, stream]);
-
-  useEffect(() => {
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, [stream]);
 
   const toggleChip = (chip: string) => {
     setContextHint((prev) => {
@@ -113,8 +123,8 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
     const canvas = canvasRef.current;
     const video = videoRef.current;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 960;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) {
@@ -162,6 +172,7 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
     } catch (err: any) {
       console.error("Error al analizar foto de galería:", err);
       toast.error(`Kallp IA: ${err.message || "No se pudo analizar la foto"}`);
+      setPreviewUrl(null);
     } finally {
       setIsProcessing(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -193,99 +204,176 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
   );
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300 overflow-y-auto">
-      <div className="w-full max-w-lg flex flex-col gap-4 my-auto">
-        {/* TOP HEADER & SEGMENTED TABS */}
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-white font-black italic uppercase tracking-tighter text-2xl">
-                Kallp Vision Pro_
-              </h2>
-              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
-                🇵🇪 CENAN + IA
-              </span>
+    <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col sm:items-center sm:justify-center sm:p-4 animate-in fade-in duration-200">
+      {/* CONTENEDOR MÓVIL FULL-SCREEN / DESKTOP CARD */}
+      <div className="w-full h-[100dvh] sm:h-[680px] sm:max-h-[90vh] sm:max-w-md bg-[#09090c] sm:rounded-[2.5rem] sm:border sm:border-white/10 flex flex-col overflow-hidden shadow-2xl relative">
+        
+        {/* 1. CABECERA COMPACTA ESTILO APP NATIVA */}
+        <div className="px-4 pt-4 pb-3 flex items-center justify-between shrink-0 z-20 bg-gradient-to-b from-black/90 to-transparent">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
+              <Sparkles size={15} />
             </div>
-            <p className="text-blue-400 font-bold uppercase text-[9px] tracking-[0.25em] mt-0.5">
-              Escáner Volumétrico de Alta Precisión
-            </p>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-white font-black italic uppercase tracking-tight text-sm leading-none">
+                  Kallp Vision
+                </h2>
+                <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md bg-white/10 text-white/80">
+                  🇵🇪 CENAN
+                </span>
+              </div>
+              <p className="text-[9px] text-white/45 font-semibold mt-0.5">
+                Escáner Nutricional Inteligente
+              </p>
+            </div>
           </div>
 
           <button
+            type="button"
             onClick={() => {
               stopCamera();
               onClose();
             }}
-            className="p-2.5 bg-white/10 text-white/70 hover:text-white rounded-full transition-colors"
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white/80 flex items-center justify-center transition-colors"
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* 3-MODE SWITCHER */}
-        <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-white/5 border border-white/10">
-          <button
-            type="button"
-            onClick={() => setMode("camera")}
-            className={`py-2.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${
-              mode === "camera"
-                ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
-                : "text-white/60 hover:text-white"
-            }`}
-          >
-            <Camera size={13} /> Escáner Foto
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              stopCamera();
-              setMode("peruvian");
-            }}
-            className={`py-2.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${
-              mode === "peruvian"
-                ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
-                : "text-white/60 hover:text-white"
-            }`}
-          >
-            <Utensils size={13} /> Platos Perú
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              stopCamera();
-              setMode("text");
-            }}
-            className={`py-2.5 px-3 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${
-              mode === "text"
-                ? "bg-blue-600 text-white shadow-lg shadow-blue-600/30"
-                : "text-white/60 hover:text-white"
-            }`}
-          >
-            <Sparkles size={13} /> Describir IA
-          </button>
+        {/* 2. PESTAÑAS SEGMENTADAS ULTRA LIMPIAS */}
+        <div className="px-4 pb-3 shrink-0 z-20">
+          <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-white/[0.06] border border-white/10">
+            <button
+              type="button"
+              onClick={() => setMode("camera")}
+              className={`py-2 rounded-xl text-[11px] font-black uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all ${
+                mode === "camera"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                  : "text-white/55 hover:text-white"
+              }`}
+            >
+              <Camera size={13} /> Cámara
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("peruvian")}
+              className={`py-2 rounded-xl text-[11px] font-black uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all ${
+                mode === "peruvian"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                  : "text-white/55 hover:text-white"
+              }`}
+            >
+              <Utensils size={13} /> Platos Perú
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("text")}
+              className={`py-2 rounded-xl text-[11px] font-black uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all ${
+                mode === "text"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                  : "text-white/55 hover:text-white"
+              }`}
+            >
+              <Sparkles size={13} /> Texto IA
+            </button>
+          </div>
         </div>
 
-        {/* MODO 1: CÁMARA Y GALERÍA + CONTEXTO IA */}
+        {/* 3. CONTENIDO PRINCIPAL SEGÚN MODO */}
         {mode === "camera" && (
-          <div className="space-y-3.5">
-            {/* Contexto previo para afinar salsas/aceite/porción */}
-            <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] font-black uppercase tracking-widest text-blue-400 flex items-center gap-1">
-                  <MessageSquarePlus size={11} /> Precisión Extra (Opcional)
-                </span>
-                {contextHint && (
-                  <button
-                    type="button"
-                    onClick={() => setContextHint("")}
-                    className="text-[9px] text-white/40 hover:text-white uppercase font-bold"
-                  >
-                    Limpiar
-                  </button>
-                )}
-              </div>
+          <div className="flex-1 flex flex-col min-h-0 relative">
+            {/* VISOR DE CÁMARA CON MARCO DE ESCANEO */}
+            <div className="flex-1 mx-4 rounded-[2rem] overflow-hidden relative bg-[#111116] border border-white/10 flex items-center justify-center">
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt="Vista previa"
+                  className="w-full h-full object-cover"
+                />
+              ) : isCameraActive ? (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="p-6 text-center space-y-4 max-w-[260px]">
+                  <div className="w-16 h-16 mx-auto rounded-3xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                    <Camera size={30} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs font-black uppercase text-white">
+                      {cameraError ? "Cámara no disponible" : "Iniciando cámara..."}
+                    </p>
+                    <p className="text-[11px] text-white/50 leading-relaxed">
+                      Toma una foto de tu plato o elige una imagen desde tu galería.
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25"
+                    >
+                      <ImagePlus size={15} /> Elegir Foto de Galería
+                    </button>
+                    {cameraError && (
+                      <button
+                        type="button"
+                        onClick={startCamera}
+                        className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5"
+                      >
+                        <SwitchCamera size={13} /> Reintentar Cámara
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
-              <div className="flex flex-wrap gap-1.5">
+              {/* Retícula visual estilo Cal AI cuando la cámara está activa */}
+              {(isCameraActive || previewUrl) && (
+                <div className="absolute inset-6 pointer-events-none flex flex-col justify-between">
+                  <div className="flex justify-between">
+                    <div className="w-7 h-7 border-t-[3px] border-l-[3px] border-white/70 rounded-tl-xl" />
+                    <div className="w-7 h-7 border-t-[3px] border-r-[3px] border-white/70 rounded-tr-xl" />
+                  </div>
+                  {!isProcessing && (
+                    <div className="self-center px-3 py-1 rounded-full bg-black/45 backdrop-blur-md border border-white/10">
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-white/80">
+                        Centra el plato en el recuadro
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <div className="w-7 h-7 border-b-[3px] border-l-[3px] border-white/70 rounded-bl-xl" />
+                    <div className="w-7 h-7 border-b-[3px] border-r-[3px] border-white/70 rounded-br-xl" />
+                  </div>
+                </div>
+              )}
+
+              {/* Overlay de carga al procesar */}
+              {isProcessing && (
+                <div className="absolute inset-0 bg-black/75 backdrop-blur-md flex flex-col items-center justify-center gap-3 z-30 p-6 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center">
+                    <Loader2 className="animate-spin text-blue-400" size={28} />
+                  </div>
+                  <p className="text-xs font-black text-white uppercase tracking-wider">
+                    Identificando ingredientes y gramos...
+                  </p>
+                  <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">
+                    Tablas Peruanas CENAN • Visión HD
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* BARRA DESLIZABLE DE CHIPS DE CONTEXTO + CONTROLES DE CÁMARA */}
+            <div className="px-4 pt-3 pb-5 space-y-3 shrink-0">
+              {/* Tira horizontal de una sola línea (no ocupa espacio vertical) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
                 {QUICK_CONTEXT_CHIPS.map((chip) => {
                   const active = contextHint.includes(chip);
                   return (
@@ -293,119 +381,82 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
                       key={chip}
                       type="button"
                       onClick={() => toggleChip(chip)}
-                      className={`px-2.5 py-1 rounded-full text-[9px] font-bold transition-all border ${
+                      className={`px-3 py-1.5 rounded-full text-[10px] font-bold whitespace-nowrap transition-all shrink-0 border ${
                         active
-                          ? "bg-blue-500/20 border-blue-500 text-blue-300"
-                          : "bg-white/5 border-white/10 text-white/60 hover:text-white"
+                          ? "bg-blue-600 border-blue-400 text-white shadow-sm shadow-blue-600/30"
+                          : "bg-white/[0.06] border-white/10 text-white/65 hover:text-white"
                       }`}
                     >
-                      {active ? "✓ " : "+ "}
+                      {active ? "✓ " : ""}
                       {chip}
                     </button>
                   );
                 })}
               </div>
 
-              <input
-                type="text"
-                value={contextHint}
-                onChange={(e) => setContextHint(e.target.value)}
-                placeholder="Ej: Lomo saltado casero con poca papa, sin cremas..."
-                className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-blue-500"
-              />
-            </div>
-
-            {/* Visor de Cámara / Imagen */}
-            <div className="relative w-full aspect-[4/3] rounded-[2rem] overflow-hidden border border-white/10 bg-[#0a0a0c] shadow-[0_0_50px_rgba(37,99,235,0.12)]">
-              {!isCameraActive && !previewUrl ? (
-                <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-6 text-center">
-                  <div className="p-6 bg-blue-600/10 rounded-full border border-blue-500/20">
-                    <Camera size={42} className="text-blue-400" />
-                  </div>
-                  <div className="space-y-1 max-w-xs">
-                    <p className="text-xs font-black uppercase tracking-wider text-white">
-                      Escanea tu plato o sube una foto
-                    </p>
-                    <p className="text-[11px] text-white/50">
-                      Detecta ingredientes peruanos, doble carbohidrato, aderezos y gramos por porción.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
-                    <button
-                      type="button"
-                      onClick={startCamera}
-                      className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-blue-600/25"
-                    >
-                      <Camera size={14} /> Abrir Cámara
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="bg-white/10 hover:bg-white/15 text-white px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 border border-white/10"
-                    >
-                      <ImagePlus size={14} /> Subir de Galería
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {previewUrl ? (
-                    <img
-                      src={previewUrl}
-                      alt="Vista previa de comida"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-
-                  {isProcessing && (
-                    <div className="absolute inset-0 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-30 p-6 text-center">
-                      <Loader2 className="animate-spin text-blue-500" size={44} />
-                      <p className="text-xs font-black text-white uppercase tracking-widest">
-                        Desglosando ingredientes y gramos...
-                      </p>
-                      <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">
-                        Calibración CENAN Perú • GPT-4o High-Res
-                      </p>
-                    </div>
-                  )}
-                </>
+              {/* Input desplegable solo si el usuario toca el botón de nota */}
+              {showCustomNote && (
+                <input
+                  type="text"
+                  value={contextHint}
+                  onChange={(e) => setContextHint(e.target.value)}
+                  placeholder="Nota opcional: ej. Lomo saltado casero con poca papa..."
+                  className="w-full bg-white/[0.06] border border-white/15 rounded-xl px-3.5 py-2 text-xs text-white placeholder:text-white/35 focus:outline-none focus:border-blue-500 animate-in fade-in duration-150"
+                />
               )}
-            </div>
 
-            {/* Botones de Disparo / Galería cuando la cámara está activa */}
-            {isCameraActive && (
-              <div className="flex items-center justify-center gap-4 pt-1">
+              {/* DOCK INFERIOR DE 3 BOTONES ESTILO CÁMARA NATIVA (Galería | Obturador | Nota) */}
+              <div className="flex items-center justify-around pt-1">
+                {/* Botón Galería */}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isProcessing}
-                  className="px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-2 border border-white/10"
+                  className="flex flex-col items-center gap-1 group"
                 >
-                  <ImagePlus size={15} /> Galería
+                  <div className="w-12 h-12 rounded-2xl bg-white/[0.08] group-hover:bg-white/15 border border-white/10 flex items-center justify-center text-white transition-all active:scale-95">
+                    <ImagePlus size={20} />
+                  </div>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-white/55">
+                    Galería
+                  </span>
                 </button>
 
+                {/* Botón Obturador Central */}
                 <button
                   type="button"
-                  onClick={captureAndScan}
+                  onClick={isCameraActive ? captureAndScan : () => fileInputRef.current?.click()}
                   disabled={isProcessing}
-                  className={`px-8 py-4 rounded-2xl flex items-center justify-center gap-2 font-black uppercase text-xs tracking-wider text-white transition-all ${
-                    isProcessing
-                      ? "bg-gray-800"
-                      : "bg-blue-600 hover:bg-blue-500 shadow-[0_0_30px_rgba(37,99,235,0.45)] active:scale-95"
-                  }`}
+                  className="relative w-[72px] h-[72px] rounded-full p-1.5 border-[3px] border-white/80 flex items-center justify-center transition-transform active:scale-90 disabled:opacity-40"
+                  title="Escanear plato"
                 >
-                  <Zap size={18} fill="currentColor" /> Capturar y Analizar
+                  <div className="w-full h-full rounded-full bg-blue-600 hover:bg-blue-500 flex items-center justify-center shadow-[0_0_25px_rgba(37,99,235,0.6)] transition-colors">
+                    <Camera size={24} className="text-white" />
+                  </div>
+                </button>
+
+                {/* Botón Nota / Detalle */}
+                <button
+                  type="button"
+                  onClick={() => setShowCustomNote((v) => !v)}
+                  disabled={isProcessing}
+                  className="flex flex-col items-center gap-1 group"
+                >
+                  <div
+                    className={`w-12 h-12 rounded-2xl border flex items-center justify-center transition-all active:scale-95 ${
+                      showCustomNote || contextHint
+                        ? "bg-blue-600/25 border-blue-500 text-blue-400"
+                        : "bg-white/[0.08] border-white/10 text-white"
+                    }`}
+                  >
+                    <SlidersHorizontal size={19} />
+                  </div>
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-white/55">
+                    Detalle
+                  </span>
                 </button>
               </div>
-            )}
+            </div>
 
             <input
               ref={fileInputRef}
@@ -417,10 +468,10 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
           </div>
         )}
 
-        {/* MODO 2: CATÁLOGO PERUANO CALIBRADO (1 CLIC) */}
+        {/* MODO 2: CATÁLOGO PERUANO CALIBRADO */}
         {mode === "peruvian" && (
-          <div className="bg-[#0d0d11] border border-white/10 rounded-[2rem] p-4 space-y-3">
-            <div className="relative">
+          <div className="flex-1 flex flex-col min-h-0 px-4 pb-4 space-y-3">
+            <div className="relative shrink-0">
               <Search
                 size={15}
                 className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40"
@@ -429,30 +480,32 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar plato peruano (Lomo saltado, Pollo a la brasa, Ceviche...)"
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder:text-white/35 focus:outline-none focus:border-blue-500"
+                placeholder="Buscar: Lomo saltado, Pollo a la brasa, Ceviche..."
+                className="w-full pl-9 pr-4 py-3 rounded-2xl bg-white/[0.06] border border-white/10 text-xs text-white placeholder:text-white/35 focus:outline-none focus:border-blue-500"
               />
             </div>
 
-            <div className="max-h-[360px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
               {filteredPresets.map((dish: MealData) => (
                 <button
                   key={dish.name}
                   type="button"
                   onClick={() => onScanResult(dish)}
-                  className="w-full text-left p-3.5 rounded-2xl bg-white/[0.03] hover:bg-blue-500/10 border border-white/10 hover:border-blue-500/40 transition-all flex items-center justify-between gap-3 group"
+                  className="w-full text-left p-3.5 rounded-2xl bg-white/[0.04] hover:bg-blue-500/10 border border-white/10 hover:border-blue-500/40 transition-all flex items-center justify-between gap-3 group"
                 >
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-black uppercase text-white group-hover:text-blue-400 transition-colors truncate">
                         {dish.name}
                       </span>
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/5 text-white/60 shrink-0">
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-white/65 shrink-0">
                         {dish.totalGrams}g
                       </span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-[10px] text-white/50 font-bold">
-                      <span className="text-orange-400 font-black">{dish.calories} kcal</span>
+                    <div className="flex flex-wrap items-center gap-2 text-[10px] text-white/55 font-bold">
+                      <span className="text-orange-400 font-black">
+                        {dish.calories} kcal
+                      </span>
                       <span>•</span>
                       <span className="text-blue-400">P: {dish.protein}g</span>
                       <span className="text-pink-400">C: {dish.carbs}g</span>
@@ -469,39 +522,41 @@ export default function MealScanner({ onScanResult, onClose }: Props) {
           </div>
         )}
 
-        {/* MODO 3: DESCRIBIR PLATO CON IA (SIN FOTO) */}
+        {/* MODO 3: DESCRIBIR PLATO CON IA */}
         {mode === "text" && (
-          <div className="bg-[#0d0d11] border border-white/10 rounded-[2rem] p-5 space-y-4">
-            <div className="space-y-1">
-              <h3 className="text-sm font-black uppercase text-white">
-                Describe lo que comiste
-              </h3>
-              <p className="text-xs text-white/50">
-                La IA desglosará cada ingrediente peruano o casero con sus gramos y macros exactos.
-              </p>
-            </div>
+          <div className="flex-1 flex flex-col justify-between px-4 pb-5 pt-1">
+            <div className="space-y-3">
+              <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 space-y-1">
+                <h3 className="text-xs font-black uppercase text-blue-400">
+                  Calculador por Descripción Peruana
+                </h3>
+                <p className="text-[11px] text-white/65 leading-relaxed">
+                  Escribe los alimentos o el plato tal como lo comiste y la IA desglosará cada ingrediente con sus gramos.
+                </p>
+              </div>
 
-            <textarea
-              rows={4}
-              value={textDescription}
-              onChange={(e) => setTextDescription(e.target.value)}
-              placeholder="Ej: Un plato de tallarines verdes con media pechuga de pollo a la plancha y una papa a la huancaína pequeña..."
-              className="w-full rounded-2xl bg-black/60 border border-white/10 p-3.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-blue-500 resize-none"
-            />
+              <textarea
+                rows={5}
+                value={textDescription}
+                onChange={(e) => setTextDescription(e.target.value)}
+                placeholder="Ej: Un plato de arroz con pollo con una papa a la huancaína pequeña, o 2 panes con palta y 3 huevos revueltos..."
+                className="w-full rounded-2xl bg-white/[0.05] border border-white/10 p-4 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-blue-500 resize-none"
+              />
+            </div>
 
             <button
               type="button"
               onClick={handleTextAnalyze}
               disabled={isProcessing}
-              className="w-full py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-wider text-xs shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isProcessing ? (
                 <>
-                  <Loader2 size={16} className="animate-spin" /> Calculando desglose con IA...
+                  <Loader2 size={16} className="animate-spin" /> Calculando macros...
                 </>
               ) : (
                 <>
-                  <Sparkles size={16} /> Calcular Macros e Ingredientes
+                  <Sparkles size={16} /> Desglosar Plato con IA
                 </>
               )}
             </button>
