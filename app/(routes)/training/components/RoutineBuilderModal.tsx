@@ -20,7 +20,9 @@ import {
     ArrowDown,
     BookmarkCheck,
     Layers,
+    GripVertical,
 } from "lucide-react";
+import { Reorder, useDragControls } from "framer-motion";
 import { useExercises } from "../hooks/useExercises";
 import { saveRoutine, updateRoutineTemplate } from "@/services/api";
 import { toast } from "sonner";
@@ -30,6 +32,166 @@ type SelectedExerciseItem = {
     targetSets: number;
     targetReps: number;
 };
+
+function DraggableExerciseRow({
+    item,
+    idx,
+    totalCount,
+    onMove,
+    onRemove,
+    onUpdateField,
+}: {
+    item: SelectedExerciseItem;
+    idx: number;
+    totalCount: number;
+    onMove: (index: number, direction: -1 | 1) => void;
+    onRemove: (exercise: any) => void;
+    onUpdateField: (
+        exerciseId: number,
+        field: "targetSets" | "targetReps",
+        delta: number
+    ) => void;
+}) {
+    const dragControls = useDragControls();
+    const [isDragging, setIsDragging] = useState(false);
+
+    return (
+        <Reorder.Item
+            value={item}
+            dragListener={false}
+            dragControls={dragControls}
+            onDragStart={() => setIsDragging(true)}
+            onDragEnd={() => setIsDragging(false)}
+            initial={{ opacity: 0, y: 10, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            whileDrag={{
+                scale: 1.03,
+                zIndex: 40,
+                boxShadow: "0 20px 38px -10px rgba(37, 99, 235, 0.35)",
+            }}
+            transition={{
+                layout: { type: "spring", stiffness: 450, damping: 32 },
+                default: { duration: 0.18 },
+            }}
+            className={`p-3 rounded-2xl bg-card dark:bg-[#121216] border space-y-2.5 select-none transition-colors ${
+                isDragging
+                    ? "border-blue-500 ring-2 ring-blue-500/30 bg-blue-500/[0.06] dark:bg-[#171923]"
+                    : "border-border dark:border-white/10 shadow-sm hover:border-blue-500/30"
+            }`}
+        >
+            <div className="flex items-center justify-between gap-2">
+                {/* Zona de arrastre (Grip + Número + Nombre) */}
+                <div
+                    onPointerDown={(e) => dragControls.start(e)}
+                    className="flex items-center gap-2 min-w-0 flex-1 touch-none cursor-grab active:cursor-grabbing py-0.5 group/grip"
+                    title="Mantén presionado y arrastra para cambiar el orden"
+                >
+                    <div className="p-1 -ml-1 rounded-lg text-muted-foreground/60 group-hover/grip:text-blue-500 group-hover/grip:bg-blue-500/10 transition-colors shrink-0">
+                        <GripVertical size={15} />
+                    </div>
+                    <span className="w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 text-[10px] font-black flex items-center justify-center shrink-0">
+                        {idx + 1}
+                    </span>
+                    <span className="text-xs font-black uppercase text-foreground truncate group-hover/grip:text-blue-500 transition-colors">
+                        {item.exercise.name}
+                    </span>
+                </div>
+
+                {/* Botones rápidos de orden y eliminar */}
+                <div className="flex items-center gap-1 shrink-0">
+                    <button
+                        type="button"
+                        onClick={() => onMove(idx, -1)}
+                        disabled={idx === 0}
+                        className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-25 transition-colors"
+                        title="Subir posición"
+                    >
+                        <ArrowUp size={13} />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onMove(idx, 1)}
+                        disabled={idx === totalCount - 1}
+                        className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-25 transition-colors"
+                        title="Bajar posición"
+                    >
+                        <ArrowDown size={13} />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onRemove(item.exercise)}
+                        className="p-1 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                        title="Quitar ejercicio"
+                    >
+                        <Trash2 size={13} />
+                    </button>
+                </div>
+            </div>
+
+            {/* Controles rápidos de Series × Reps */}
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border/60 dark:border-white/5">
+                <div className="flex items-center justify-between bg-muted/50 dark:bg-white/5 rounded-xl px-2.5 py-1.5">
+                    <span className="text-[9px] font-black uppercase text-muted-foreground">
+                        Series
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() =>
+                                onUpdateField(item.exercise.id, "targetSets", -1)
+                            }
+                            className="w-5 h-5 rounded-md bg-card dark:bg-white/10 flex items-center justify-center text-foreground hover:bg-blue-500 hover:text-white transition-colors"
+                        >
+                            <Minus size={11} />
+                        </button>
+                        <span className="text-xs font-black text-foreground w-4 text-center">
+                            {item.targetSets}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                onUpdateField(item.exercise.id, "targetSets", 1)
+                            }
+                            className="w-5 h-5 rounded-md bg-card dark:bg-white/10 flex items-center justify-center text-foreground hover:bg-blue-500 hover:text-white transition-colors"
+                        >
+                            <Plus size={11} />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between bg-muted/50 dark:bg-white/5 rounded-xl px-2.5 py-1.5">
+                    <span className="text-[9px] font-black uppercase text-muted-foreground">
+                        Reps
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                        <button
+                            type="button"
+                            onClick={() =>
+                                onUpdateField(item.exercise.id, "targetReps", -2)
+                            }
+                            className="w-5 h-5 rounded-md bg-card dark:bg-white/10 flex items-center justify-center text-foreground hover:bg-blue-500 hover:text-white transition-colors"
+                        >
+                            <Minus size={11} />
+                        </button>
+                        <span className="text-xs font-black text-foreground w-5 text-center">
+                            {item.targetReps}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                onUpdateField(item.exercise.id, "targetReps", 2)
+                            }
+                            className="w-5 h-5 rounded-md bg-card dark:bg-white/10 flex items-center justify-center text-foreground hover:bg-blue-500 hover:text-white transition-colors"
+                        >
+                            <Plus size={11} />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Reorder.Item>
+    );
+}
 
 const BODY_PART_FILTERS = [
     { id: "ALL", label: "Todos" },
@@ -509,9 +671,16 @@ export default function RoutineBuilderModal({
                         }`}
                     >
                         <div className="p-3.5 border-b border-border dark:border-white/10 flex items-center justify-between shrink-0">
-                            <span className="text-xs font-black uppercase tracking-wider text-foreground">
-                                Orden y Series ({selectedItems.length})
-                            </span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-black uppercase tracking-wider text-foreground">
+                                    Orden y Series ({selectedItems.length})
+                                </span>
+                                {selectedItems.length > 1 && (
+                                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20 flex items-center gap-1">
+                                        <GripVertical size={10} /> Arrastrable
+                                    </span>
+                                )}
+                            </div>
                             {selectedItems.length > 0 && (
                                 <button
                                     type="button"
@@ -523,115 +692,26 @@ export default function RoutineBuilderModal({
                             )}
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-3 space-y-2.5 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
                             {selectedItems.length > 0 ? (
-                                selectedItems.map((item, idx) => (
-                                    <div
-                                        key={item.exercise.id}
-                                        className="p-3 rounded-2xl bg-card dark:bg-[#121216] border border-border dark:border-white/10 space-y-2.5 shadow-sm"
-                                    >
-                                        <div className="flex items-center justify-between gap-2">
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <span className="w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 text-[10px] font-black flex items-center justify-center shrink-0">
-                                                    {idx + 1}
-                                                </span>
-                                                <span className="text-xs font-black uppercase text-foreground truncate">
-                                                    {item.exercise.name}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex items-center gap-1 shrink-0">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => moveItem(idx, -1)}
-                                                    disabled={idx === 0}
-                                                    className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
-                                                    title="Subir"
-                                                >
-                                                    <ArrowUp size={13} />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => moveItem(idx, 1)}
-                                                    disabled={idx === selectedItems.length - 1}
-                                                    className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
-                                                    title="Bajar"
-                                                >
-                                                    <ArrowDown size={13} />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => toggleExercise(item.exercise)}
-                                                    className="p-1 text-muted-foreground hover:text-rose-500"
-                                                    title="Quitar"
-                                                >
-                                                    <Trash2 size={13} />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {/* Controles rápidos de Series × Reps */}
-                                        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-border/60 dark:border-white/5">
-                                            <div className="flex items-center justify-between bg-muted/50 dark:bg-white/5 rounded-xl px-2.5 py-1.5">
-                                                <span className="text-[9px] font-black uppercase text-muted-foreground">
-                                                    Series
-                                                </span>
-                                                <div className="flex items-center gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            updateItemField(item.exercise.id, "targetSets", -1)
-                                                        }
-                                                        className="w-5 h-5 rounded-md bg-card dark:bg-white/10 flex items-center justify-center text-foreground hover:bg-blue-500 hover:text-white transition-colors"
-                                                    >
-                                                        <Minus size={11} />
-                                                    </button>
-                                                    <span className="text-xs font-black text-foreground w-4 text-center">
-                                                        {item.targetSets}
-                                                    </span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            updateItemField(item.exercise.id, "targetSets", 1)
-                                                        }
-                                                        className="w-5 h-5 rounded-md bg-card dark:bg-white/10 flex items-center justify-center text-foreground hover:bg-blue-500 hover:text-white transition-colors"
-                                                    >
-                                                        <Plus size={11} />
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center justify-between bg-muted/50 dark:bg-white/5 rounded-xl px-2.5 py-1.5">
-                                                <span className="text-[9px] font-black uppercase text-muted-foreground">
-                                                    Reps
-                                                </span>
-                                                <div className="flex items-center gap-1.5">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            updateItemField(item.exercise.id, "targetReps", -2)
-                                                        }
-                                                        className="w-5 h-5 rounded-md bg-card dark:bg-white/10 flex items-center justify-center text-foreground hover:bg-blue-500 hover:text-white transition-colors"
-                                                    >
-                                                        <Minus size={11} />
-                                                    </button>
-                                                    <span className="text-xs font-black text-foreground w-5 text-center">
-                                                        {item.targetReps}
-                                                    </span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            updateItemField(item.exercise.id, "targetReps", 2)
-                                                        }
-                                                        className="w-5 h-5 rounded-md bg-card dark:bg-white/10 flex items-center justify-center text-foreground hover:bg-blue-500 hover:text-white transition-colors"
-                                                    >
-                                                        <Plus size={11} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
+                                <Reorder.Group
+                                    axis="y"
+                                    values={selectedItems}
+                                    onReorder={setSelectedItems}
+                                    className="space-y-2.5"
+                                >
+                                    {selectedItems.map((item, idx) => (
+                                        <DraggableExerciseRow
+                                            key={item.exercise.id}
+                                            item={item}
+                                            idx={idx}
+                                            totalCount={selectedItems.length}
+                                            onMove={moveItem}
+                                            onRemove={toggleExercise}
+                                            onUpdateField={updateItemField}
+                                        />
+                                    ))}
+                                </Reorder.Group>
                             ) : (
                                 <div className="h-full flex flex-col items-center justify-center text-center py-12 px-4 opacity-50">
                                     <Dumbbell size={32} className="text-muted-foreground mb-2" />
@@ -675,3 +755,4 @@ export default function RoutineBuilderModal({
         </Dialog>
     );
 }
+
