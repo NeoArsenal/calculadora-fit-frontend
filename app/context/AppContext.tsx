@@ -122,7 +122,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const todayStr = today.getFullYear() + "-" + (today.getMonth()+1).toString().padStart(2, '0') + "-" + today.getDate().toString().padStart(2, '0');
         
         const filteredMeals = nutriSummary.meals.filter((m: any) => {
-          const mDate = new Date(m.createdAt.endsWith('Z') ? m.createdAt : m.createdAt + 'Z');
+          const mDate = new Date(m.createdAt);
           const mDateStr = mDate.getFullYear() + "-" + (mDate.getMonth()+1).toString().padStart(2, '0') + "-" + mDate.getDate().toString().padStart(2, '0');
           return mDateStr === todayStr;
         });

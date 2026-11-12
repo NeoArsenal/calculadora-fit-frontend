@@ -760,8 +760,10 @@ export default function WorkoutPanel({
         setIsSaving(true);
         try {
             const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+            const now = new Date();
+            const localIsoDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}T${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
             const payload = {
-                workoutDate: new Date().toISOString().slice(0, 19),
+                workoutDate: localIsoDate,
                 routineId: initialRoutine?.id || null,
                 exerciseLogs: finalData
             };
