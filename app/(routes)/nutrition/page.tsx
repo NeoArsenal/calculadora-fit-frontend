@@ -32,15 +32,50 @@ interface MealItemData {
 import { useApp } from "@/app/context/AppContext";
 
 export default function NutritionDashboard() {
-  const { nutritionSummary, nutrition, refreshEcosystem, gainXp, CURRENT_USER_ID } = useApp();
+  const { nutritionSummary, nutrition, userProfile, records, refreshEcosystem, gainXp, CURRENT_USER_ID } = useApp();
 
   const [showScanner, setShowScanner] = useState(false);
   const [scannedData, setScannedData] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Sincronización exacta con la Meta Energética del Dashboard (Déficit / Mant. / Volumen)
+  const unifiedTargetCalories = (() => {
+    const heightCm = userProfile?.heightCm || 170;
+    const age = (userProfile as any)?.age || 25;
+    const currentWeight =
+      records?.[0]?.weightKg ||
+      (userProfile as any)?.currentWeightKg ||
+      (userProfile as any)?.targetWeightKg ||
+      0;
+
+    if (currentWeight > 0) {
+      const bmr = 10 * currentWeight + 6.25 * heightCm - 5 * age + 5;
+      const maintenance = Math.round(bmr * 1.55);
+      const savedMode =
+        typeof window !== "undefined"
+          ? localStorage.getItem("kallp_energy_goal")
+          : null;
+      const pg = (userProfile?.primaryGoal || "").toLowerCase();
+
+      const mode =
+        savedMode ||
+        (pg.includes("definici") || pg.includes("déficit") || pg.includes("deficit") || pg.includes("pérdida")
+          ? "deficit"
+          : pg.includes("volumen") || pg.includes("ganancia")
+          ? "bulk"
+          : "deficit");
+
+      if (mode === "deficit") return Math.max(1200, maintenance - 500);
+      if (mode === "bulk") return maintenance + 300;
+      return maintenance;
+    }
+
+    return Math.round(nutrition?.targetCalories || 2450);
+  })();
+
   const [dailyMacros, setDailyMacros] = useState<DailyMacros>({
     calories: 0,
-    target: nutrition?.targetCalories || 2450, 
+    target: unifiedTargetCalories, 
     protein: 0,
     carbs: 0,
     fats: 0
@@ -56,7 +91,7 @@ export default function NutritionDashboard() {
         protein: nutritionSummary.totals.protein,
         carbs: nutritionSummary.totals.carbs,
         fats: nutritionSummary.totals.fats,
-        target: nutrition?.targetCalories || 2450
+        target: unifiedTargetCalories
       }));
 
       setMeals(nutritionSummary.meals.map((m: any) => ({
@@ -67,8 +102,10 @@ export default function NutritionDashboard() {
         time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         color: "text-blue-500 bg-blue-50 dark:bg-blue-900/20"
       })));
+    } else {
+      setDailyMacros(prev => ({ ...prev, target: unifiedTargetCalories }));
     }
-  }, [nutritionSummary, nutrition]);
+  }, [nutritionSummary, nutrition, unifiedTargetCalories]);
 
   const proteinTarget = nutrition?.targetProteinGrams || 150;
   const fatTarget = Math.round((dailyMacros.target * 0.25) / 9) || 70;
@@ -132,10 +169,12 @@ export default function NutritionDashboard() {
             <div className="flex justify-between items-start mb-8">
                 <h3 className="text-gray-900 dark:text-white font-black italic uppercase text-lg tracking-tight transition-colors">Balance Macros_</h3>
                 <div className="text-right">
-                    <p className="text-3xl font-black italic text-gray-900 dark:text-white tracking-tighter transition-colors">
-                        {Math.max(0, dailyMacros.target - dailyMacros.calories).toFixed(2)}
+                    <p className="text-3xl font-black italic text-gray-900 dark:text-white tracking-tighter transition-colors tabular-nums">
+                        {Math.round(Math.max(0, dailyMacros.target - dailyMacros.calories))}
                     </p>
-                    <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">Kcal Restantes</p>
+                    <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">
+                        Kcal Restantes (Meta: {Math.round(dailyMacros.target)})
+                    </p>
                 </div>
             </div>
 

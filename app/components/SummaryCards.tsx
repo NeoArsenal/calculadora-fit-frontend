@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Activity, Beaker, Weight, Scale, Flame, Droplet, Plus,
   ArrowUpRight, ArrowDownRight, Minus, Sparkles
 } from 'lucide-react';
 import { toast } from "sonner";
 import { useApp } from "@/app/context/AppContext";
+import { updateUserProfile } from "@/services/api";
 
 interface SummaryCardsProps {
   nutrition: any;
@@ -16,8 +17,27 @@ interface SummaryCardsProps {
     age: number;
     level?: number;
     xp?: number;
+    primaryGoal?: string;
+    targetCalories?: number;
   };
   onOpenRecordModal?: () => void;
+}
+
+type EnergyGoalMode = 'deficit' | 'maintenance' | 'bulk';
+
+function parseGoalFromProfile(primaryGoal?: string): EnergyGoalMode | null {
+  if (!primaryGoal) return null;
+  const g = primaryGoal.toLowerCase();
+  if (g.includes('déficit') || g.includes('deficit') || g.includes('definición') || g.includes('definicion') || g.includes('pérdida') || g.includes('perdida') || g.includes('lose')) {
+    return 'deficit';
+  }
+  if (g.includes('volumen') || g.includes('ganancia') || g.includes('bulk') || g.includes('gain')) {
+    return 'bulk';
+  }
+  if (g.includes('mant')) {
+    return 'maintenance';
+  }
+  return null;
 }
 
 export default function SummaryCards({ 
@@ -26,8 +46,33 @@ export default function SummaryCards({
   userProfile,
   onOpenRecordModal 
 }: SummaryCardsProps) {
-  const [goal, setGoal] = useState<'maintenance' | 'deficit' | 'bulk'>('maintenance');
-  const { hydration, logWater } = useApp();
+  const { hydration, logWater, CURRENT_USER_ID, refreshEcosystem } = useApp();
+
+  // Inicializar con el objetivo guardado del usuario (localStorage + userProfile.primaryGoal)
+  const [goal, setGoal] = useState<EnergyGoalMode>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('kallp_energy_goal') as EnergyGoalMode | null;
+      if (saved === 'deficit' || saved === 'maintenance' || saved === 'bulk') {
+        return saved;
+      }
+    }
+    return parseGoalFromProfile(userProfile?.primaryGoal) || 'deficit';
+  });
+
+  // Sincronizar cuando termina de cargar userProfile desde el backend
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedLocal = localStorage.getItem('kallp_energy_goal') as EnergyGoalMode | null;
+      if (savedLocal === 'deficit' || savedLocal === 'maintenance' || savedLocal === 'bulk') {
+        setGoal(savedLocal);
+        return;
+      }
+    }
+    const profileGoal = parseGoalFromProfile(userProfile?.primaryGoal);
+    if (profileGoal) {
+      setGoal(profileGoal);
+    }
+  }, [userProfile?.primaryGoal]);
 
   // --- CÁLCULOS BIOMÉTRICOS ---
   const heightCm = userProfile?.heightCm || 170;
@@ -50,17 +95,72 @@ export default function SummaryCards({
   };
   const bmiStatus = getBmiStatus(bmiValue);
 
-  // --- CÁLCULOS CALÓRICOS ---
+  // --- CÁLCULOS CALÓRICOS UNIFICADOS CON EL MÓDULO DE NUTRICIÓN ---
   const bmr = currentWeight > 0 
     ? (10 * currentWeight) + (6.25 * heightCm) - (5 * age) + 5 
     : 0;
   const maintenanceCalories = Math.round(bmr * 1.55);
   
-  const getTargetCalories = () => {
-    if (goal === 'deficit') return Math.max(1200, maintenanceCalories - 500);
-    if (goal === 'bulk') return maintenanceCalories + 300;
+  const computeCaloriesForMode = (mode: EnergyGoalMode) => {
+    if (mode === 'deficit') return Math.max(1200, maintenanceCalories - 500);
+    if (mode === 'bulk') return maintenanceCalories + 300;
     return maintenanceCalories;
   };
+
+  const getTargetCalories = () => computeCaloriesForMode(goal);
+
+  const handleGoalChange = async (newGoal: EnergyGoalMode) => {
+    setGoal(newGoal);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('kallp_energy_goal', newGoal);
+    }
+
+    const newTargetCalories = computeCaloriesForMode(newGoal);
+    const goalLabel =
+      newGoal === 'deficit'
+        ? 'Definición'
+        : newGoal === 'bulk'
+        ? 'Volumen'
+        : 'Mantenimiento';
+
+    if (CURRENT_USER_ID && newTargetCalories > 0) {
+      try {
+        await updateUserProfile(CURRENT_USER_ID, {
+          primaryGoal: goalLabel,
+          targetCalories: newTargetCalories,
+        });
+        await refreshEcosystem();
+        toast.success(`Meta actualizada: ${goalLabel} (${newTargetCalories} kcal)`);
+      } catch (e) {
+        console.error("Error al sincronizar meta energética:", e);
+      }
+    }
+  };
+
+  // Auto-sincronizar si el backend aún tenía otro valor distinto al modo activo del usuario
+  useEffect(() => {
+    const expectedKcal = computeCaloriesForMode(goal);
+    if (
+      CURRENT_USER_ID &&
+      expectedKcal > 0 &&
+      nutrition?.targetCalories &&
+      Math.abs(Math.round(nutrition.targetCalories) - expectedKcal) > 5
+    ) {
+      const goalLabel =
+        goal === 'deficit'
+          ? 'Definición'
+          : goal === 'bulk'
+          ? 'Volumen'
+          : 'Mantenimiento';
+      updateUserProfile(CURRENT_USER_ID, {
+        primaryGoal: goalLabel,
+        targetCalories: expectedKcal,
+      })
+        .then(() => refreshEcosystem())
+        .catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [goal, currentWeight, CURRENT_USER_ID]);
 
   // --- HIDRATACIÓN ---
   const dailyGoalMl = nutrition?.hydrationTargetMl || 3000;
@@ -173,7 +273,7 @@ export default function SummaryCards({
               ] as const).map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => setGoal(item.id)}
+                  onClick={() => handleGoalChange(item.id)}
                   className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all ${
                     goal === item.id 
                       ? 'bg-blue-600 text-white shadow-sm' 
