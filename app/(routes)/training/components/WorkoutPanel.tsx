@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useApp } from "@/app/context/AppContext";
-import { getAuthHeaders, saveRoutine } from "@/services/api";
+import { getAuthHeaders, saveRoutine, updateRoutineTemplate } from "@/services/api";
 import { playPop, playChime } from "@/app/utils/audio";
 import WorkoutShareModal, { WorkoutSummaryData } from "./WorkoutShareModal";
 
@@ -171,7 +171,95 @@ export default function WorkoutPanel({
     const { gainXp, refreshEcosystem, trainingSessions } = useApp();
     const [open, setOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
-    const [activeExercises, setActiveExercises] = useState<any[]>([]);
+
+    const draftKey = `kallp_workout_draft_${initialRoutine?.id || "free"}`;
+
+    // 🔍 BUSCAR ÚLTIMO REGISTRO HISTÓRICO DE UN EJERCICIO (Por ID o por Nombre)
+    const findLastExerciseLog = (exerciseId: number, exerciseName?: string) => {
+        if (!trainingSessions || trainingSessions.length === 0) return null;
+        const sorted = [...trainingSessions].sort((a: any, b: any) =>
+            new Date(b.workoutDate || b.date || 0).getTime() - new Date(a.workoutDate || a.date || 0).getTime()
+        );
+        for (const session of sorted) {
+            const logs = session.logs || session.exerciseLogs || [];
+            const match = logs.find((l: any) => {
+                const sameId = l.exerciseId === exerciseId || l.exercise?.id === exerciseId;
+                const sameName = exerciseName && l.exerciseName?.toLowerCase() === exerciseName.toLowerCase();
+                return sameId || sameName;
+            });
+            if (match) return match;
+        }
+        return null;
+    };
+
+    // 🏗️ GENERAR SERIES PRE-LLENADAS CON EL ÚLTIMO ENTRENAMIENTO
+    const buildSetsFromHistory = (
+        exId: number,
+        exName: string,
+        targetSetsCount = 3,
+        fallbackReps = 10
+    ): WorkoutSet[] => {
+        const lastLog = findLastExerciseLog(exId, exName);
+        if (lastLog) {
+            if (Array.isArray(lastLog.sets) && lastLog.sets.length > 0) {
+                const count = Math.max(targetSetsCount, lastLog.sets.length);
+                const result: WorkoutSet[] = [];
+                for (let i = 0; i < count; i++) {
+                    const refSet = lastLog.sets[i] || lastLog.sets[lastLog.sets.length - 1];
+                    const w = refSet?.weightKg ?? lastLog.weightUsed ?? 0;
+                    const r = refSet?.reps ?? lastLog.repsDone ?? fallbackReps;
+                    result.push({
+                        weight: w > 0 ? String(w) : "",
+                        reps: r > 0 ? String(r) : String(fallbackReps),
+                        completed: false,
+                    });
+                }
+                return result;
+            }
+
+            const count = Math.max(1, targetSetsCount || lastLog.setsDone || 3);
+            const w = lastLog.weightUsed || lastLog.weight || 0;
+            const r = lastLog.repsDone || lastLog.reps || fallbackReps;
+            return Array.from({ length: count }, () => ({
+                weight: w > 0 ? String(w) : "",
+                reps: r > 0 ? String(r) : String(fallbackReps),
+                completed: false,
+            }));
+        }
+
+        return Array.from({ length: Math.max(1, targetSetsCount) }, () => ({
+            weight: "",
+            reps: String(fallbackReps),
+            completed: false,
+        }));
+    };
+
+    // ⚡ INICIALIZACIÓN INSTANTÁNEA (0ms de parpadeo: usa rx.exercise o borrador local)
+    const [activeExercises, setActiveExercises] = useState<any[]>(() => {
+        if (typeof window !== "undefined") {
+            try {
+                const raw = localStorage.getItem(draftKey);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed.timestamp && Date.now() - parsed.timestamp < 6 * 3600 * 1000 && Array.isArray(parsed.activeExercises) && parsed.activeExercises.length > 0) {
+                        return parsed.activeExercises;
+                    }
+                }
+            } catch {}
+        }
+        if (initialRoutine?.exercises?.length > 0) {
+            return initialRoutine.exercises
+                .map((rx: any) => rx.exercise || {
+                    id: rx.exerciseId,
+                    name: rx.exerciseName || "Ejercicio",
+                    bodyPart: "General",
+                    equipment: "Barbell",
+                    gifUrl: "",
+                })
+                .filter((e: any) => e && e.id);
+        }
+        return [];
+    });
 
     const BODY_PART_FILTERS = [
         { id: "ALL", label: "Todos" },
@@ -196,8 +284,32 @@ export default function WorkoutPanel({
         ? exercises
         : exercises.filter((ex) => ex.bodyPart?.toLowerCase() === selectedCategory.toLowerCase());
     
-    // 🧠 ESTADOS DE ENTRENAMIENTO
-    const [workoutLogs, setWorkoutLogs] = useState<Record<number, WorkoutSet[]>>({});
+    // 🧠 ESTADOS DE ENTRENAMIENTO (Pre-llenado instantáneo desde historial o borrador)
+    const [workoutLogs, setWorkoutLogs] = useState<Record<number, WorkoutSet[]>>(() => {
+        if (typeof window !== "undefined") {
+            try {
+                const raw = localStorage.getItem(draftKey);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed.timestamp && Date.now() - parsed.timestamp < 6 * 3600 * 1000 && parsed.workoutLogs && Object.keys(parsed.workoutLogs).length > 0) {
+                        return parsed.workoutLogs;
+                    }
+                }
+            } catch {}
+        }
+        if (initialRoutine?.exercises?.length > 0) {
+            const logs: Record<number, WorkoutSet[]> = {};
+            initialRoutine.exercises.forEach((rx: any) => {
+                const exId = rx.exercise?.id || rx.exerciseId;
+                const exName = rx.exercise?.name || rx.exerciseName || "";
+                if (exId) {
+                    logs[exId] = buildSetsFromHistory(exId, exName, rx.targetSets || 3, rx.targetReps || 10);
+                }
+            });
+            return logs;
+        }
+        return {};
+    });
     const [isSaving, setIsSaving] = useState(false); 
     const [isSavingTemplate, setIsSavingTemplate] = useState(false); 
     
@@ -273,41 +385,69 @@ export default function WorkoutPanel({
         }
     };
 
-    // CARGAR EJERCICIOS INICIALES (Plantilla o vacíos)
+    // ENRIQUECER EJERCICIOS Y PESOS ANTERIORES CUANDO CARGUEN LOS DATOS (Sin parpadeo ni sobreescribir lo editado)
     useEffect(() => {
-        if (activeExercises.length === 0 && exercises.length > 0) {
-            if (initialRoutine && initialRoutine.exercises) {
-                const initialEx: any[] = [];
-                const initialLogs: Record<number, WorkoutSet[]> = {};
-                
-                initialRoutine.exercises.forEach((rx: any) => {
-                    const matchedEx = exercises.find(e => e.id === rx.exercise?.id || e.id === rx.exerciseId);
-                    if (matchedEx) {
-                        initialEx.push(matchedEx);
-                        const sets: WorkoutSet[] = [];
-                        for (let i = 0; i < (rx.targetSets || 1); i++) {
-                            sets.push({ 
-                                weight: "", 
-                                reps: rx.targetReps ? String(rx.targetReps) : "", 
-                                completed: false 
-                            });
-                        }
-                        initialLogs[matchedEx.id] = sets;
-                    }
-                });
-                setActiveExercises(initialEx);
-                setWorkoutLogs(initialLogs);
-            }
+        if (exercises.length > 0 && activeExercises.length > 0) {
+            setActiveExercises(prev =>
+                prev.map(ex => {
+                    if (ex.gifUrl) return ex;
+                    const found = exercises.find(c => c.id === ex.id || c.name?.toLowerCase() === ex.name?.toLowerCase());
+                    return found ? { ...ex, ...found } : ex;
+                })
+            );
         }
-    }, [exercises, initialRoutine, activeExercises.length]);
+    }, [exercises]);
 
-    // Agregar ejercicio
+    // Pre-llenar pesos anteriores si trainingSessions terminó de cargar después del primer render
+    useEffect(() => {
+        if (!trainingSessions || trainingSessions.length === 0 || activeExercises.length === 0) return;
+        setWorkoutLogs(prev => {
+            let changed = false;
+            const next = { ...prev };
+            activeExercises.forEach(ex => {
+                const currentSets = next[ex.id] || [];
+                const allEmptyWeights = currentSets.every(s => !s.weight && !s.completed);
+                if (allEmptyWeights) {
+                    const lastLog = findLastExerciseLog(ex.id, ex.name);
+                    if (lastLog && (lastLog.weightUsed > 0 || (Array.isArray(lastLog.sets) && lastLog.sets.length > 0))) {
+                        next[ex.id] = buildSetsFromHistory(
+                            ex.id,
+                            ex.name,
+                            currentSets.length || 3,
+                            currentSets[0]?.reps ? Number(currentSets[0].reps) : 10
+                        );
+                        changed = true;
+                    }
+                }
+            });
+            return changed ? next : prev;
+        });
+    }, [trainingSessions, activeExercises]);
+
+    // 💾 AUTO-GUARDAR BORRADOR EN LOCALSTORAGE (Protección contra recarga F5 accidental)
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        if (activeExercises.length > 0) {
+            try {
+                localStorage.setItem(
+                    draftKey,
+                    JSON.stringify({
+                        timestamp: Date.now(),
+                        activeExercises,
+                        workoutLogs,
+                    })
+                );
+            } catch {}
+        }
+    }, [activeExercises, workoutLogs, draftKey]);
+
+    // Agregar ejercicio (Con 3 series por defecto y pesos de la última sesión pre-cargados)
     const addAccessory = (ex: any) => {
         if (!activeExercises.find(e => e.id === ex.id)) {
             setActiveExercises(prev => [...prev, ex]);
             setWorkoutLogs(prev => ({
                 ...prev,
-                [ex.id]: [] 
+                [ex.id]: buildSetsFromHistory(ex.id, ex.name, 3, 10)
             }));
         }
         setOpen(false);
@@ -315,7 +455,13 @@ export default function WorkoutPanel({
 
     // Eliminar ejercicio de la sesión
     const removeExercise = (exerciseId: number) => {
-        setActiveExercises(prev => prev.filter(e => e.id !== exerciseId));
+        setActiveExercises(prev => {
+            const updated = prev.filter(e => e.id !== exerciseId);
+            if (updated.length === 0 && typeof window !== "undefined") {
+                localStorage.removeItem(draftKey);
+            }
+            return updated;
+        });
         setWorkoutLogs(prev => {
             const newLogs = { ...prev };
             delete newLogs[exerciseId];
@@ -323,25 +469,25 @@ export default function WorkoutPanel({
         });
     };
 
-    // OBTENER MARCA ANTERIOR (Columna ANTERIOR)
-    const getPreviousRecord = (exerciseId: number): string => {
-        if (!trainingSessions || trainingSessions.length === 0) return "—";
-        
-        const sorted = [...trainingSessions].sort((a: any, b: any) => 
-            new Date(b.workoutDate || b.date || 0).getTime() - new Date(a.workoutDate || a.date || 0).getTime()
-        );
+    // OBTENER MARCA ANTERIOR POR SERIE (Columna ANTERIOR)
+    const getPreviousRecord = (exerciseId: number, exerciseName?: string, setIdx?: number): string => {
+        const match = findLastExerciseLog(exerciseId, exerciseName);
+        if (!match) return "—";
 
-        for (const session of sorted) {
-            const logs = session.logs || session.exerciseLogs || [];
-            const match = logs.find((l: any) => l.exerciseId === exerciseId || l.exercise?.id === exerciseId);
-            if (match) {
-                const w = match.weightUsed || match.weight || 0;
-                const r = match.repsDone || match.reps || 0;
-                if (w > 0 && r > 0) return `${w} kg × ${r}`;
-                if (w > 0) return `${w} kg`;
-                if (r > 0) return `${r} reps`;
-            }
+        if (typeof setIdx === "number" && Array.isArray(match.sets) && match.sets.length > 0) {
+            const setMatch = match.sets[setIdx] || match.sets[match.sets.length - 1];
+            const sw = setMatch?.weightKg ?? match.weightUsed ?? 0;
+            const sr = setMatch?.reps ?? match.repsDone ?? 0;
+            if (sw > 0 && sr > 0) return `${sw} kg × ${sr}`;
+            if (sw > 0) return `${sw} kg`;
+            if (sr > 0) return `${sr} reps`;
         }
+
+        const w = match.weightUsed || match.weight || 0;
+        const r = match.repsDone || match.reps || 0;
+        if (w > 0 && r > 0) return `${w} kg × ${r}`;
+        if (w > 0) return `${w} kg`;
+        if (r > 0) return `${r} reps`;
         return "—";
     };
 
@@ -456,9 +602,14 @@ export default function WorkoutPanel({
                 })
             };
 
-            await saveRoutine(templateData);
+            if (initialRoutine?.id && templateName.trim().toLowerCase() === initialRoutine.name?.trim().toLowerCase()) {
+                await updateRoutineTemplate(initialRoutine.id, templateData);
+                toast.success("¡Plantilla actualizada exitosamente! 💾");
+            } else {
+                await saveRoutine(templateData);
+                toast.success("¡Plantilla guardada exitosamente! 💾");
+            }
             await refreshEcosystem();
-            toast.success("¡Plantilla guardada exitosamente! 💾");
             setIsTemplateModalOpen(false);
         } catch (error) {
             console.error(error);
@@ -622,6 +773,25 @@ export default function WorkoutPanel({
             });
 
             if (response.ok) {
+                if (typeof window !== "undefined") {
+                    localStorage.removeItem(draftKey);
+                }
+                // Si entrenó sobre una plantilla existente y agregó/modificó ejercicios o series, sincronizar la plantilla
+                if (initialRoutine?.id) {
+                    try {
+                        await updateRoutineTemplate(initialRoutine.id, {
+                            name: initialRoutine.name,
+                            exercises: activeExercises.map(ex => {
+                                const sets = workoutLogs[ex.id] || [];
+                                return {
+                                    exerciseId: ex.id,
+                                    targetSets: Math.max(1, sets.length),
+                                    targetReps: sets.length > 0 ? parseInt(sets[0].reps, 10) || 10 : 10
+                                };
+                            })
+                        });
+                    } catch {}
+                }
                 playChime();
                 setRestTime(null);
                 gainXp(100);
@@ -786,9 +956,10 @@ export default function WorkoutPanel({
 
                                     {/* Filas de series */}
                                     {sets.map((set, setIdx) => {
-                                        const currentPR = getExercisePR(ex.id);
+                                        const currentPR = getExercisePR(ex.id, ex.name);
                                         const currentWeight = parseFloat(set.weight) || 0;
                                         const isPR = currentWeight > 0 && (currentPR === 0 || currentWeight >= currentPR);
+                                        const setPreviousRecord = getPreviousRecord(ex.id, ex.name, setIdx);
 
                                         return (
                                             <SwipeableSetRow
@@ -796,7 +967,7 @@ export default function WorkoutPanel({
                                                 set={set}
                                                 setIdx={setIdx}
                                                 exId={ex.id}
-                                                previousRecord={previousRecord}
+                                                previousRecord={setPreviousRecord}
                                                 isPR={isPR}
                                                 isSaving={isSaving}
                                                 onUpdateSet={(field, value) => updateSet(ex.id, setIdx, field, value)}

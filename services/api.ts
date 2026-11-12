@@ -211,6 +211,16 @@ export const saveRoutine = async (routine: any) => {
   return response.json();
 };
 
+export const updateRoutineTemplate = async (id: number, routine: any) => {
+  const response = await fetch(`${BASE_URL}/routines/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(routine),
+  });
+  if (!response.ok) throw new Error('Error al actualizar plantilla de rutina');
+  return response.json();
+};
+
 export const updateRoutineName = async (id: number, name: string) => {
   const response = await fetch(`${BASE_URL}/routines/${id}/name?name=${encodeURIComponent(name)}`, {
     method: 'PUT',
