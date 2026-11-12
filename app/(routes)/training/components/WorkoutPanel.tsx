@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { 
     Plus, CheckCircle2, Check, Dumbbell, Trash2, FastForward, 
-    ChevronLeft, MoreVertical, Clock, Bookmark, Flame 
+    ChevronLeft, MoreVertical, Clock, Bookmark, Flame,
+    Trophy, TrendingUp, AlertTriangle, Zap
 } from "lucide-react";
 import { useExercises } from "../hooks/useExercises";
 import { 
@@ -206,15 +207,44 @@ export default function WorkoutPanel({
     // Modal de tiempo de descanso
     const [isRestModalOpen, setIsRestModalOpen] = useState(false);
 
+    // ⚠️ Modal de confirmación si faltan series/ejercicios por completar
+    const [isIncompleteModalOpen, setIsIncompleteModalOpen] = useState(false);
+    const [incompleteStats, setIncompleteStats] = useState({ pendingSets: 0, pendingExercises: 0 });
+
+    // 🏆 Modal inmersivo de Resumen Post-Entrenamiento
+    const [workoutSummary, setWorkoutSummary] = useState<{
+        routineTitle: string;
+        durationFormatted: string;
+        totalVolumeKg: number;
+        totalSetsDone: number;
+        totalRepsDone: number;
+        newPRsCount: number;
+        xpEarned: number;
+        exercises: {
+            id: number;
+            name: string;
+            gifUrl?: string;
+            setsDone: number;
+            bestWeight: number;
+            bestReps: number;
+            volumeKg: number;
+            prevBestWeight: number;
+            weightDiff: number;
+            repDiff: number;
+            badgeType: "NEW_PR" | "REP_PR" | "FIRST_TIME" | "SOLID";
+        }[];
+    } | null>(null);
+
     // ⏱️ CRONÓMETRO DE SESIÓN ACTIVA (Cuenta progresiva)
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
     useEffect(() => {
+        if (workoutSummary) return; // Pausar reloj al mostrar el resumen final
         const timer = setInterval(() => {
             setElapsedSeconds(prev => prev + 1);
         }, 1000);
         return () => clearInterval(timer);
-    }, []);
+    }, [workoutSummary]);
 
     const formatElapsedTime = (totalSecs: number) => {
         const mins = Math.floor(totalSecs / 60);
@@ -335,20 +365,40 @@ export default function WorkoutPanel({
         return "—";
     };
 
-    // OBTENER PR MÁXIMO HISTÓRICO
-    const getExercisePR = (exerciseId: number) => {
+    // OBTENER PR MÁXIMO HISTÓRICO (por ID o nombre de ejercicio)
+    const getExercisePR = (exerciseId: number, exerciseName?: string) => {
         let maxPR = 0;
         if (trainingSessions && trainingSessions.length > 0) {
             trainingSessions.forEach((session: any) => {
                 const logs = session.logs || session.exerciseLogs || [];
                 logs.forEach((log: any) => {
-                    if ((log.exerciseId === exerciseId || log.exercise?.id === exerciseId) && log.weightUsed > maxPR) {
-                        maxPR = log.weightUsed;
+                    const sameId = log.exerciseId === exerciseId || log.exercise?.id === exerciseId;
+                    const sameName = exerciseName && log.exerciseName?.toLowerCase() === exerciseName.toLowerCase();
+                    if ((sameId || sameName) && (Number(log.weightUsed) || 0) > maxPR) {
+                        maxPR = Number(log.weightUsed) || 0;
                     }
                 });
             });
         }
         return maxPR;
+    };
+
+    const getExerciseBestRepsAtWeight = (exerciseId: number, exerciseName: string, targetWeight: number) => {
+        let bestReps = 0;
+        if (trainingSessions && trainingSessions.length > 0) {
+            trainingSessions.forEach((session: any) => {
+                const logs = session.logs || session.exerciseLogs || [];
+                logs.forEach((log: any) => {
+                    const sameId = log.exerciseId === exerciseId || log.exercise?.id === exerciseId;
+                    const sameName = exerciseName && log.exerciseName?.toLowerCase() === exerciseName.toLowerCase();
+                    if ((sameId || sameName) && Number(log.weightUsed) >= targetWeight) {
+                        const r = Number(log.repsDone) || 0;
+                        if (r > bestReps) bestReps = r;
+                    }
+                });
+            });
+        }
+        return bestReps;
     };
 
     // GESTIÓN DE SERIES
@@ -438,16 +488,122 @@ export default function WorkoutPanel({
         }
     };
 
-    // FINALIZAR ENTRENAMIENTO
-    const handleFinishWorkout = async () => {
+    // VALIDAR ANTES DE FINALIZAR ENTRENAMIENTO
+    const handleFinishWorkout = () => {
+        if (activeExercises.length === 0) {
+            toast.error("Agrega al menos un ejercicio a tu sesión.");
+            return;
+        }
+
+        let completedSetsCount = 0;
+        let pendingSetsCount = 0;
+        let pendingExercisesCount = 0;
+
+        activeExercises.forEach(ex => {
+            const sets = workoutLogs[ex.id] || [];
+            const validSets = sets.filter(s => s.completed);
+            completedSetsCount += validSets.length;
+            pendingSetsCount += Math.max(0, sets.length - validSets.length);
+            if (validSets.length === 0) {
+                pendingExercisesCount += 1;
+            }
+        });
+
+        // Si no marcó ningún check pero llenó peso y reps en alguna serie, contamos esas
+        if (completedSetsCount === 0) {
+            const filledSetsCount = activeExercises.reduce((acc, ex) => {
+                const sets = workoutLogs[ex.id] || [];
+                return acc + sets.filter(s => String(s.weight).trim() !== "" && String(s.reps).trim() !== "").length;
+            }, 0);
+
+            if (filledSetsCount === 0) {
+                toast.error("No has completado ninguna serie todavía. Marca el check ✓ al terminar tu serie.");
+                return;
+            }
+        }
+
+        // Si hay series sin marcar o ejercicios sin terminar, preguntar primero de forma inmersiva
+        if (pendingSetsCount > 0 || pendingExercisesCount > 0) {
+            setIncompleteStats({
+                pendingSets: pendingSetsCount,
+                pendingExercises: pendingExercisesCount
+            });
+            setIsIncompleteModalOpen(true);
+            return;
+        }
+
+        executeSaveWorkout();
+    };
+
+    // GUARDAR ENTRENAMIENTO Y GENERAR RESUMEN DE PROGRESO
+    const executeSaveWorkout = async () => {
+        setIsIncompleteModalOpen(false);
+
+        const summaryExercises: NonNullable<typeof workoutSummary>["exercises"] = [];
+        let totalVolumeKg = 0;
+        let totalSetsDone = 0;
+        let totalRepsDone = 0;
+        let newPRsCount = 0;
+
         const finalData = activeExercises.map(ex => {
             const sets = workoutLogs[ex.id] || [];
-            const completedSets = sets.filter(s => 
-                s.completed || (String(s.weight).trim() !== "" && String(s.reps).trim() !== "")
-            );
+            // Priorizamos las series marcadas con completed=true; si ninguna fue marcada, tomamos las que tengan peso y reps
+            const markedSets = sets.filter(s => s.completed);
+            const completedSets = markedSets.length > 0
+                ? markedSets
+                : sets.filter(s => String(s.weight).trim() !== "" && String(s.reps).trim() !== "");
             
             const maxWeight = Math.max(...completedSets.map(s => parseFloat(String(s.weight)) || 0), 0);
-            const bestReps = completedSets.length > 0 ? parseInt(String(completedSets[0].reps), 10) || 0 : 0;
+            // Buscar el máximo de repeticiones logrado con ese peso máximo (o en la primera serie)
+            const repsAtMaxWeight = completedSets
+                .filter(s => (parseFloat(String(s.weight)) || 0) === maxWeight)
+                .map(s => parseInt(String(s.reps), 10) || 0);
+            const bestReps = repsAtMaxWeight.length > 0
+                ? Math.max(...repsAtMaxWeight, 0)
+                : (completedSets.length > 0 ? parseInt(String(completedSets[0].reps), 10) || 0 : 0);
+
+            const exVolume = completedSets.reduce((sum, s) => {
+                const w = parseFloat(String(s.weight)) || 0;
+                const r = parseInt(String(s.reps), 10) || 0;
+                return sum + (w * r);
+            }, 0);
+            const exTotalReps = completedSets.reduce((sum, s) => sum + (parseInt(String(s.reps), 10) || 0), 0);
+
+            if (completedSets.length > 0) {
+                const prevPR = getExercisePR(ex.id, ex.name);
+                const prevBestReps = getExerciseBestRepsAtWeight(ex.id, ex.name, maxWeight);
+                const weightDiff = prevPR > 0 ? Number((maxWeight - prevPR).toFixed(1)) : 0;
+                const repDiff = prevBestReps > 0 ? bestReps - prevBestReps : 0;
+
+                let badgeType: "NEW_PR" | "REP_PR" | "FIRST_TIME" | "SOLID" = "SOLID";
+                if (prevPR === 0 && maxWeight > 0) {
+                    badgeType = "FIRST_TIME";
+                } else if (prevPR > 0 && maxWeight > prevPR) {
+                    badgeType = "NEW_PR";
+                    newPRsCount += 1;
+                } else if (prevPR > 0 && maxWeight === prevPR && repDiff > 0) {
+                    badgeType = "REP_PR";
+                    newPRsCount += 1;
+                }
+
+                totalVolumeKg += exVolume;
+                totalSetsDone += completedSets.length;
+                totalRepsDone += exTotalReps;
+
+                summaryExercises.push({
+                    id: ex.id,
+                    name: ex.name,
+                    gifUrl: ex.gifUrl,
+                    setsDone: completedSets.length,
+                    bestWeight: maxWeight,
+                    bestReps: bestReps > 0 ? bestReps : 10,
+                    volumeKg: Math.round(exVolume),
+                    prevBestWeight: prevPR,
+                    weightDiff,
+                    repDiff,
+                    badgeType
+                });
+            }
 
             return {
                 exerciseId: ex.id,
@@ -486,10 +642,20 @@ export default function WorkoutPanel({
 
             if (response.ok) {
                 playChime();
-                gainXp(20);
-                toast.success("¡Entrenamiento guardado con éxito! 🏆");
+                setRestTime(null);
+                gainXp(100);
                 await refreshEcosystem();
-                onFinish();
+                // Mostrar pantalla inmersiva de Resumen Post-Entrenamiento antes de salir
+                setWorkoutSummary({
+                    routineTitle: initialRoutine ? initialRoutine.name : "Entrenamiento Libre",
+                    durationFormatted: formatElapsedTime(elapsedSeconds),
+                    totalVolumeKg: Math.round(totalVolumeKg),
+                    totalSetsDone,
+                    totalRepsDone,
+                    newPRsCount,
+                    xpEarned: 100,
+                    exercises: summaryExercises
+                });
             } else {
                 toast.error("Error al registrar la sesión en la nube.");
             }
@@ -883,6 +1049,190 @@ export default function WorkoutPanel({
                             </button>
                         ))}
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* ⚠️ MODAL DE CONFIRMACIÓN: SERIES / EJERCICIOS PENDIENTES */}
+            <Dialog open={isIncompleteModalOpen} onOpenChange={setIsIncompleteModalOpen}>
+                <DialogContent className="sm:max-w-md bg-card dark:bg-[#0f0f11] border border-border dark:border-white/10 rounded-[2rem] p-6 shadow-2xl text-foreground">
+                    <div className="flex flex-col items-center text-center">
+                        <div className="w-14 h-14 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-500 flex items-center justify-center mb-4 shadow-lg shadow-amber-500/10">
+                            <AlertTriangle size={28} />
+                        </div>
+                        <DialogTitle className="text-xl font-black italic uppercase tracking-tight text-foreground">
+                            ¿Terminar con series pendientes?
+                        </DialogTitle>
+                        <DialogDescription className="text-muted-foreground text-xs font-medium mt-2 leading-relaxed max-w-xs">
+                            Aún tienes{" "}
+                            <span className="text-amber-500 font-black">
+                                {incompleteStats.pendingSets} {incompleteStats.pendingSets === 1 ? "serie sin marcar" : "series sin marcar"}
+                            </span>
+                            {incompleteStats.pendingExercises > 0 && (
+                                <>
+                                    {" "}y{" "}
+                                    <span className="text-amber-500 font-black">
+                                        {incompleteStats.pendingExercises} {incompleteStats.pendingExercises === 1 ? "ejercicio sin iniciar" : "ejercicios sin iniciar"}
+                                    </span>
+                                </>
+                            )}
+                            . ¿Quieres seguir entrenando o finalizar guardando solo las series hechas?
+                        </DialogDescription>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full mt-6">
+                            <button
+                                type="button"
+                                onClick={() => setIsIncompleteModalOpen(false)}
+                                className="w-full py-3.5 px-4 rounded-xl bg-muted/80 dark:bg-white/5 hover:bg-muted dark:hover:bg-white/10 border border-border dark:border-white/10 text-foreground font-black uppercase tracking-wider text-xs transition-all active:scale-95"
+                            >
+                                Seguir entrenando
+                            </button>
+                            <button
+                                type="button"
+                                onClick={executeSaveWorkout}
+                                disabled={isSaving}
+                                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#ff0055] via-[#f43f5e] to-[#e11d48] hover:opacity-95 text-white font-black uppercase tracking-wider text-xs shadow-lg shadow-rose-600/30 transition-all active:scale-95"
+                            >
+                                {isSaving ? "Guardando..." : "Finalizar igualmente"}
+                            </button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* 🏆 PANTALLA / MODAL INMERSIVO DE RESUMEN POST-ENTRENAMIENTO */}
+            <Dialog open={workoutSummary !== null} onOpenChange={(isOpen) => { if (!isOpen) onFinish(); }}>
+                <DialogContent className="sm:max-w-lg bg-card dark:bg-[#0a0a0c] border border-border dark:border-white/10 rounded-[2.25rem] p-0 overflow-hidden shadow-2xl text-foreground max-h-[90vh] flex flex-col">
+                    {workoutSummary && (
+                        <>
+                            {/* Cabecera Hero de Victoria */}
+                            <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900 text-white p-6 pb-5 overflow-hidden shrink-0">
+                                <div className="absolute -top-12 -right-12 w-44 h-44 bg-white/15 rounded-full blur-3xl pointer-events-none" />
+                                
+                                <div className="relative z-10 flex items-center justify-between mb-3">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 border border-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-widest">
+                                        <Zap size={12} className="text-amber-300" fill="currentColor" /> Sesión Completada
+                                    </span>
+                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-400/20 border border-emerald-300/30 text-emerald-200 text-[10px] font-black uppercase tracking-widest">
+                                        +{workoutSummary.xpEarned} XP
+                                    </span>
+                                </div>
+
+                                <div className="relative z-10 flex items-center justify-between gap-4">
+                                    <div>
+                                        <h2 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tight leading-none">
+                                            {workoutSummary.routineTitle}
+                                        </h2>
+                                        <p className="text-xs text-blue-100/90 font-medium mt-1.5">
+                                            {workoutSummary.newPRsCount > 0 
+                                                ? `¡Increíble! Rompiste ${workoutSummary.newPRsCount} ${workoutSummary.newPRsCount === 1 ? "récord personal" : "récords personales"} hoy 🔥`
+                                                : "Gran trabajo de consistencia. Cada serie suma hacia tu meta 💪"}
+                                        </p>
+                                    </div>
+                                    <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0 shadow-lg">
+                                        <Trophy size={24} className="text-amber-300" />
+                                    </div>
+                                </div>
+
+                                {/* Bento 3 KPIs de la sesión */}
+                                <div className="relative z-10 grid grid-cols-3 gap-2.5 mt-5">
+                                    <div className="bg-black/25 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-center">
+                                        <p className="text-[9px] text-blue-200 font-bold uppercase tracking-widest">Volumen</p>
+                                        <p className="text-lg font-black tracking-tight mt-0.5">
+                                            {workoutSummary.totalVolumeKg.toLocaleString("en-US")} <span className="text-[10px] font-bold text-blue-200">kg</span>
+                                        </p>
+                                    </div>
+                                    <div className="bg-black/25 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-center">
+                                        <p className="text-[9px] text-blue-200 font-bold uppercase tracking-widest">Series / Reps</p>
+                                        <p className="text-lg font-black tracking-tight mt-0.5">
+                                            {workoutSummary.totalSetsDone} <span className="text-[10px] font-bold text-blue-200">/ {workoutSummary.totalRepsDone}r</span>
+                                        </p>
+                                    </div>
+                                    <div className="bg-black/25 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-center">
+                                        <p className="text-[9px] text-blue-200 font-bold uppercase tracking-widest">Duración</p>
+                                        <p className="text-lg font-black tracking-tight mt-0.5">
+                                            {workoutSummary.durationFormatted.replace(" min", "m")}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Lista de Progreso por Ejercicio */}
+                            <div className="p-5 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+                                        Análisis de Progreso ({workoutSummary.exercises.length} {workoutSummary.exercises.length === 1 ? "ejercicio" : "ejercicios"})
+                                    </h3>
+                                    <span className="text-[10px] font-bold text-blue-500">vs tu historial</span>
+                                </div>
+
+                                <div className="space-y-2.5">
+                                    {workoutSummary.exercises.map((ex) => (
+                                        <div
+                                            key={ex.id}
+                                            className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-muted/40 dark:bg-white/[0.03] border border-border dark:border-white/5"
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                <div className="w-11 h-11 rounded-xl bg-white border border-border dark:border-white/10 overflow-hidden flex items-center justify-center shrink-0">
+                                                    {ex.gifUrl ? (
+                                                        <img src={ex.gifUrl} alt={ex.name} className="w-full h-full object-contain mix-blend-multiply" />
+                                                    ) : (
+                                                        <Dumbbell className="w-5 h-5 text-gray-400" />
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-xs font-black uppercase text-foreground truncate">
+                                                        {ex.name}
+                                                    </p>
+                                                    <p className="text-[11px] text-muted-foreground font-semibold mt-0.5">
+                                                        {ex.setsDone} {ex.setsDone === 1 ? "serie" : "series"} • Mejor:{" "}
+                                                        <span className="text-foreground font-bold">{ex.bestWeight} kg × {ex.bestReps}</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Badge Dinámico de Progreso */}
+                                            <div className="shrink-0 text-right">
+                                                {ex.badgeType === "NEW_PR" && (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider">
+                                                        <Trophy size={11} /> Nuevo PR +{ex.weightDiff}kg
+                                                    </span>
+                                                )}
+                                                {ex.badgeType === "REP_PR" && (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider">
+                                                        <TrendingUp size={11} /> +{ex.repDiff} Reps
+                                                    </span>
+                                                )}
+                                                {ex.badgeType === "FIRST_TIME" && (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-wider">
+                                                        <Zap size={11} /> 1ª Marca
+                                                    </span>
+                                                )}
+                                                {ex.badgeType === "SOLID" && (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted dark:bg-white/10 text-muted-foreground text-[10px] font-bold uppercase tracking-wider">
+                                                        <Check size={11} /> Sólido ({ex.volumeKg}kg)
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Botón de Salida al Hub */}
+                            <div className="p-5 pt-3 border-t border-border dark:border-white/10 bg-card dark:bg-[#0a0a0c] shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setWorkoutSummary(null);
+                                        onFinish();
+                                    }}
+                                    className="w-full py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-blue-600/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                                >
+                                    <CheckCircle2 size={17} /> Continuar al Hub
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </DialogContent>
             </Dialog>
 
