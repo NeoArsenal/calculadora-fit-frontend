@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { useApp } from "@/app/context/AppContext";
 import { getAuthHeaders, saveRoutine } from "@/services/api";
 import { playPop, playChime } from "@/app/utils/audio";
+import WorkoutShareModal, { WorkoutSummaryData } from "./WorkoutShareModal";
 
 // 🧠 TIPO DE DATO: Estructura de cada serie
 type WorkoutSet = {
@@ -211,29 +212,8 @@ export default function WorkoutPanel({
     const [isIncompleteModalOpen, setIsIncompleteModalOpen] = useState(false);
     const [incompleteStats, setIncompleteStats] = useState({ pendingSets: 0, pendingExercises: 0 });
 
-    // 🏆 Modal inmersivo de Resumen Post-Entrenamiento
-    const [workoutSummary, setWorkoutSummary] = useState<{
-        routineTitle: string;
-        durationFormatted: string;
-        totalVolumeKg: number;
-        totalSetsDone: number;
-        totalRepsDone: number;
-        newPRsCount: number;
-        xpEarned: number;
-        exercises: {
-            id: number;
-            name: string;
-            gifUrl?: string;
-            setsDone: number;
-            bestWeight: number;
-            bestReps: number;
-            volumeKg: number;
-            prevBestWeight: number;
-            weightDiff: number;
-            repDiff: number;
-            badgeType: "NEW_PR" | "REP_PR" | "FIRST_TIME" | "SOLID";
-        }[];
-    } | null>(null);
+    // 🏆 Modal inmersivo de Resumen Post-Entrenamiento (Estilo Adidas Running Share Studio)
+    const [workoutSummary, setWorkoutSummary] = useState<WorkoutSummaryData | null>(null);
 
     // ⏱️ CRONÓMETRO DE SESIÓN ACTIVA (Cuenta progresiva)
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -593,6 +573,7 @@ export default function WorkoutPanel({
                 summaryExercises.push({
                     id: ex.id,
                     name: ex.name,
+                    bodyPart: ex.bodyPart,
                     gifUrl: ex.gifUrl,
                     setsDone: completedSets.length,
                     bestWeight: maxWeight,
@@ -1099,142 +1080,16 @@ export default function WorkoutPanel({
                 </DialogContent>
             </Dialog>
 
-            {/* 🏆 PANTALLA / MODAL INMERSIVO DE RESUMEN POST-ENTRENAMIENTO */}
-            <Dialog open={workoutSummary !== null} onOpenChange={(isOpen) => { if (!isOpen) onFinish(); }}>
-                <DialogContent className="sm:max-w-lg bg-card dark:bg-[#0a0a0c] border border-border dark:border-white/10 rounded-[2.25rem] p-0 overflow-hidden shadow-2xl text-foreground max-h-[90vh] flex flex-col">
-                    {workoutSummary && (
-                        <>
-                            {/* Cabecera Hero de Victoria */}
-                            <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900 text-white p-6 pb-5 overflow-hidden shrink-0">
-                                <div className="absolute -top-12 -right-12 w-44 h-44 bg-white/15 rounded-full blur-3xl pointer-events-none" />
-                                
-                                <div className="relative z-10 flex items-center justify-between mb-3">
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 border border-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-widest">
-                                        <Zap size={12} className="text-amber-300" fill="currentColor" /> Sesión Completada
-                                    </span>
-                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-400/20 border border-emerald-300/30 text-emerald-200 text-[10px] font-black uppercase tracking-widest">
-                                        +{workoutSummary.xpEarned} XP
-                                    </span>
-                                </div>
-
-                                <div className="relative z-10 flex items-center justify-between gap-4">
-                                    <div>
-                                        <h2 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tight leading-none">
-                                            {workoutSummary.routineTitle}
-                                        </h2>
-                                        <p className="text-xs text-blue-100/90 font-medium mt-1.5">
-                                            {workoutSummary.newPRsCount > 0 
-                                                ? `¡Increíble! Rompiste ${workoutSummary.newPRsCount} ${workoutSummary.newPRsCount === 1 ? "récord personal" : "récords personales"} hoy 🔥`
-                                                : "Gran trabajo de consistencia. Cada serie suma hacia tu meta 💪"}
-                                        </p>
-                                    </div>
-                                    <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0 shadow-lg">
-                                        <Trophy size={24} className="text-amber-300" />
-                                    </div>
-                                </div>
-
-                                {/* Bento 3 KPIs de la sesión */}
-                                <div className="relative z-10 grid grid-cols-3 gap-2.5 mt-5">
-                                    <div className="bg-black/25 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-center">
-                                        <p className="text-[9px] text-blue-200 font-bold uppercase tracking-widest">Volumen</p>
-                                        <p className="text-lg font-black tracking-tight mt-0.5">
-                                            {workoutSummary.totalVolumeKg.toLocaleString("en-US")} <span className="text-[10px] font-bold text-blue-200">kg</span>
-                                        </p>
-                                    </div>
-                                    <div className="bg-black/25 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-center">
-                                        <p className="text-[9px] text-blue-200 font-bold uppercase tracking-widest">Series / Reps</p>
-                                        <p className="text-lg font-black tracking-tight mt-0.5">
-                                            {workoutSummary.totalSetsDone} <span className="text-[10px] font-bold text-blue-200">/ {workoutSummary.totalRepsDone}r</span>
-                                        </p>
-                                    </div>
-                                    <div className="bg-black/25 backdrop-blur-md border border-white/10 rounded-2xl p-3 text-center">
-                                        <p className="text-[9px] text-blue-200 font-bold uppercase tracking-widest">Duración</p>
-                                        <p className="text-lg font-black tracking-tight mt-0.5">
-                                            {workoutSummary.durationFormatted.replace(" min", "m")}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Lista de Progreso por Ejercicio */}
-                            <div className="p-5 overflow-y-auto space-y-3 flex-1 custom-scrollbar">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
-                                        Análisis de Progreso ({workoutSummary.exercises.length} {workoutSummary.exercises.length === 1 ? "ejercicio" : "ejercicios"})
-                                    </h3>
-                                    <span className="text-[10px] font-bold text-blue-500">vs tu historial</span>
-                                </div>
-
-                                <div className="space-y-2.5">
-                                    {workoutSummary.exercises.map((ex) => (
-                                        <div
-                                            key={ex.id}
-                                            className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-muted/40 dark:bg-white/[0.03] border border-border dark:border-white/5"
-                                        >
-                                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                <div className="w-11 h-11 rounded-xl bg-white border border-border dark:border-white/10 overflow-hidden flex items-center justify-center shrink-0">
-                                                    {ex.gifUrl ? (
-                                                        <img src={ex.gifUrl} alt={ex.name} className="w-full h-full object-contain mix-blend-multiply" />
-                                                    ) : (
-                                                        <Dumbbell className="w-5 h-5 text-gray-400" />
-                                                    )}
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="text-xs font-black uppercase text-foreground truncate">
-                                                        {ex.name}
-                                                    </p>
-                                                    <p className="text-[11px] text-muted-foreground font-semibold mt-0.5">
-                                                        {ex.setsDone} {ex.setsDone === 1 ? "serie" : "series"} • Mejor:{" "}
-                                                        <span className="text-foreground font-bold">{ex.bestWeight} kg × {ex.bestReps}</span>
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            {/* Badge Dinámico de Progreso */}
-                                            <div className="shrink-0 text-right">
-                                                {ex.badgeType === "NEW_PR" && (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase tracking-wider">
-                                                        <Trophy size={11} /> Nuevo PR +{ex.weightDiff}kg
-                                                    </span>
-                                                )}
-                                                {ex.badgeType === "REP_PR" && (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider">
-                                                        <TrendingUp size={11} /> +{ex.repDiff} Reps
-                                                    </span>
-                                                )}
-                                                {ex.badgeType === "FIRST_TIME" && (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-wider">
-                                                        <Zap size={11} /> 1ª Marca
-                                                    </span>
-                                                )}
-                                                {ex.badgeType === "SOLID" && (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted dark:bg-white/10 text-muted-foreground text-[10px] font-bold uppercase tracking-wider">
-                                                        <Check size={11} /> Sólido ({ex.volumeKg}kg)
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Botón de Salida al Hub */}
-                            <div className="p-5 pt-3 border-t border-border dark:border-white/10 bg-card dark:bg-[#0a0a0c] shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setWorkoutSummary(null);
-                                        onFinish();
-                                    }}
-                                    className="w-full py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-blue-600/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                                >
-                                    <CheckCircle2 size={17} /> Continuar al Hub
-                                </button>
-                            </div>
-                        </>
-                    )}
-                </DialogContent>
-            </Dialog>
+            {/* 🏆 PANTALLA / MODAL INMERSIVO "KALLP SHARE STUDIO" (ESTILO ADIDAS RUNNING) */}
+            {workoutSummary && (
+                <WorkoutShareModal
+                    summary={workoutSummary}
+                    onClose={() => {
+                        setWorkoutSummary(null);
+                        onFinish();
+                    }}
+                />
+            )}
 
             {/* ⏱️ TEMPORIZADOR INTELIGENTE FLOTANTE (Al descansar) */}
             {restTime !== null && (
