@@ -4,7 +4,8 @@ import { useState } from "react";
 import RoutinePlanner from "./components/RoutinePlanner";
 import WorkoutPanel from "./components/WorkoutPanel";
 import StrengthProgression from "./components/StrengthProgression";
-import { Play, Loader2, Bookmark, Pencil, Trash2, Check, X, Calendar, TrendingUp } from "lucide-react";
+import RoutineBuilderModal from "./components/RoutineBuilderModal";
+import { Play, Loader2, Bookmark, Pencil, Trash2, Check, X, Calendar, TrendingUp, Plus } from "lucide-react";
 
 import { useApp } from "@/app/context/AppContext";
 import { updateRoutineName, deleteRoutineTemplate } from "@/services/api";
@@ -18,6 +19,8 @@ export default function TrainingPage() {
     const [editName, setEditName] = useState("");
     const [routineToDelete, setRoutineToDelete] = useState<number | null>(null);
     const [activeTab, setActiveTab] = useState<"logbook" | "progression">("logbook");
+    const [isBuilderOpen, setIsBuilderOpen] = useState(false);
+    const [builderEditingRoutine, setBuilderEditingRoutine] = useState<any | null>(null);
 
     // 📱 GESTOS TIPO iOS (Swipe to go back)
     const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -50,8 +53,8 @@ export default function TrainingPage() {
 
     const handleEditClick = (e: React.MouseEvent, routine: any) => {
         e.stopPropagation();
-        setEditingRoutineId(routine.id);
-        setEditName(routine.name);
+        setBuilderEditingRoutine(routine);
+        setIsBuilderOpen(true);
     };
 
     const handleSaveEdit = async (e: React.MouseEvent, id: number) => {
@@ -147,9 +150,24 @@ export default function TrainingPage() {
                     
                     {/* 🔥 TUS PLANTILLAS GUARDADAS */}
                     <div className="md:col-span-12">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Bookmark className="text-blue-500" size={20} />
-                            <h2 className="text-lg font-bold tracking-tight text-gray-900 dark:text-white transition-colors">Tus Plantillas</h2>
+                        <div className="flex items-center justify-between gap-3 mb-4">
+                            <div className="flex items-center gap-2">
+                                <Bookmark className="text-blue-500" size={20} />
+                                <h2 className="text-lg font-bold tracking-tight text-gray-900 dark:text-white transition-colors">
+                                    Tus Plantillas
+                                </h2>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setBuilderEditingRoutine(null);
+                                    setIsBuilderOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600/10 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white border border-blue-500/25 font-black uppercase tracking-wider text-[11px] transition-all active:scale-95"
+                            >
+                                <Plus size={14} strokeWidth={2.5} /> Nueva Plantilla
+                            </button>
                         </div>
                         
                         {routines && routines.length > 0 ? (
@@ -248,8 +266,20 @@ export default function TrainingPage() {
                                 })}
                             </div>
                         ) : (
-                            <div className="bg-card border border-border dark:border-white/10 p-6 rounded-2xl text-center shadow-sm transition-colors">
-                                <p className="text-sm text-muted-foreground">Aún no has guardado ninguna plantilla. Crea una rutina libre y presiona "Guardar Plantilla".</p>
+                            <div className="bg-card border border-border dark:border-white/10 p-6 rounded-2xl text-center shadow-sm transition-colors space-y-3">
+                                <p className="text-sm text-muted-foreground">
+                                    Aún no has guardado ninguna plantilla. Arma tu rutina ideal con el constructor en segundos.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setBuilderEditingRoutine(null);
+                                        setIsBuilderOpen(true);
+                                    }}
+                                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-wider text-xs shadow-md shadow-blue-600/20 transition-all active:scale-95"
+                                >
+                                    <Plus size={15} /> Crear mi primera plantilla
+                                </button>
                             </div>
                         )}
                     </div>
@@ -294,6 +324,17 @@ export default function TrainingPage() {
 
                 </div>
             )}
+
+            {/* 🛠️ MODAL CONSTRUCTOR / EDITOR DE PLANTILLAS (MULTI-SELECCIÓN) */}
+            <RoutineBuilderModal
+                isOpen={isBuilderOpen}
+                editingRoutine={builderEditingRoutine}
+                onClose={() => {
+                    setIsBuilderOpen(false);
+                    setBuilderEditingRoutine(null);
+                }}
+                onSaved={refreshEcosystem}
+            />
 
             {/* 🔥 MODAL DE CONFIRMACIÓN DE ELIMINACIÓN 🔥 */}
             {routineToDelete !== null && (
