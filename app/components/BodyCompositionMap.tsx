@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { User, Target, Loader2, Flame, CalendarDays } from "lucide-react";
+import { User, Target, Loader2, Flame, CalendarDays, Sparkles, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { useApp } from "@/app/context/AppContext";
@@ -24,13 +24,44 @@ const MUSCLE_GROUPS: {
   key: MuscleKey;
   coachKey: string;
   label: string;
+  advice: string;
 }[] = [
-  { key: "chest", coachKey: "chest", label: "Pecho" },
-  { key: "back", coachKey: "espalda", label: "Espalda" },
-  { key: "shoulders", coachKey: "hombros", label: "Hombros" },
-  { key: "arms", coachKey: "brazos", label: "Brazos" },
-  { key: "core", coachKey: "waist", label: "Core" },
-  { key: "legs", coachKey: "piernas", label: "Piernas" },
+  {
+    key: "chest",
+    coachKey: "chest",
+    label: "Pecho",
+    advice: "Prioriza el control excéntrico en press banca e inclinado para máxima hipertrofia pectoral.",
+  },
+  {
+    key: "back",
+    coachKey: "espalda",
+    label: "Espalda",
+    advice: "Combina tracciones verticales (dominadas/jalón) y horizontales (remos) para amplitud y densidad dorsal.",
+  },
+  {
+    key: "shoulders",
+    coachKey: "hombros",
+    label: "Hombros",
+    advice: "Trabaja las 3 cabezas del deltoides; las elevaciones laterales controladas dan el marco en 'V'.",
+  },
+  {
+    key: "arms",
+    coachKey: "brazos",
+    label: "Brazos",
+    advice: "El tríceps aporta el 65% del volumen del brazo; mantén los codos fijos en extensiones y curls.",
+  },
+  {
+    key: "core",
+    coachKey: "waist",
+    label: "Core",
+    advice: "Un core sólido transfiere fuerza a tu sentadilla y peso muerto protegiendo la zona lumbar.",
+  },
+  {
+    key: "legs",
+    coachKey: "piernas",
+    label: "Piernas",
+    advice: "Base metabólica y de fuerza: equilibra dominantes de rodilla (sentadilla/prensa) con bisagra de cadera.",
+  },
 ];
 
 // Clasificador híbrido por bodyPart del catálogo + nombre en español/inglés
@@ -460,6 +491,45 @@ export default function BodyCompositionMap({
           })}
         </div>
       </div>
+
+      {/* BARRA INFERIOR DE ANÁLISIS IA (NO TAPA EL MODELO 3D NI EL MENÚ EN CELULAR) */}
+      {selectedMuscleKey && (
+        <div className="w-full mt-3 p-3.5 rounded-2xl bg-card dark:bg-[#141418] border border-orange-500/30 flex items-start justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-start gap-2.5 min-w-0">
+            <div className="p-2 rounded-xl bg-orange-500/15 text-orange-500 shrink-0 mt-0.5">
+              <Sparkles size={14} />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-black uppercase text-foreground">
+                  Kallp AI •{" "}
+                  {MUSCLE_GROUPS.find((g) => g.key === selectedMuscleKey)?.label}
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-500">
+                  {setsByGroup[selectedMuscleKey] > 0
+                    ? `${setsByGroup[selectedMuscleKey]} series registradas`
+                    : "En recuperación / Listo para entrenar"}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                {MUSCLE_GROUPS.find((g) => g.key === selectedMuscleKey)?.advice}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedMuscleKey(null);
+              setFocusedMuscle(null);
+              onSelectPart(null);
+            }}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground shrink-0"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

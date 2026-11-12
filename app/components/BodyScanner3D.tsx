@@ -36,7 +36,13 @@ function AnatomicalMuscleBody({
   const { scene } = useGLTF("/models/human.glb");
   const groupRef = useRef<THREE.Group>(null!);
 
-  // Shader anatómico que colorea directamente los grupos musculares sobre la malla 3D
+  // Shader anatómico calibrado con las coordenadas reales de human.glb:
+  // En la malla local de human.glb, la matriz raíz transforma local.y -> -world.z:
+  // Por lo tanto:
+  //   y < 0  => CARA ANTERIOR (Frente: Pecho, Abdomen, Cuádriceps, Bíceps)
+  //   y > 0  => CARA POSTERIOR (Dorso: Espalda, Trapecio, Glúteos, Isquiotibiales)
+  //   z      => ALTURA en cm (0 = planta de los pies, 182 = coronilla)
+  //   x      => IZQUIERDA / DERECHA en cm (0 = eje central)
   const muscleShaderMaterial = useMemo(
     () =>
       new THREE.ShaderMaterial({
@@ -82,10 +88,9 @@ function AnatomicalMuscleBody({
 
           // Color térmico según nivel de activación (0..1)
           vec3 activationPalette(float intensity) {
-            // De Ámbar/Naranja energético (activación media) a Rojo/Carmesí incandescente (alta activación)
-            vec3 lowColor  = vec3(0.98, 0.55, 0.12); // Naranja #fa8c1f
-            vec3 midColor  = vec3(0.96, 0.28, 0.15); // Rojo-Naranja #f54726
-            vec3 highColor = vec3(1.00, 0.14, 0.28); // Carmesí Neón #ff2447
+            vec3 lowColor  = vec3(0.98, 0.55, 0.12); // Naranja energético
+            vec3 midColor  = vec3(0.96, 0.28, 0.15); // Rojo-Naranja
+            vec3 highColor = vec3(1.00, 0.14, 0.28); // Carmesí Neón
             vec3 c = mix(lowColor, midColor, smoothstep(0.2, 0.65, intensity));
             return mix(c, highColor, smoothstep(0.65, 1.0, intensity));
           }
@@ -93,35 +98,35 @@ function AnatomicalMuscleBody({
           void main() {
             float x = vLocalPos.x;
             float ax = abs(x);
-            float y = vLocalPos.y; // y > 0: Anterior (Pecho/Abdomen) | y < 0: Posterior (Espalda/Glúteo)
+            float y = vLocalPos.y; // y < 0 = FRENTE (Pecho/Abdomen) | y > 0 = ESPALDA
             float z = vLocalPos.z; // Altura en cm: 0 (pies) .. 182 (cabeza)
 
-            // 1. PECHO (Pectorales mayor y menor: anterior, z 123..143, |x| < 16.5)
-            float chestMask = band(z, 123.0, 143.0, 3.0)
-                            * band(ax, 0.8, 16.2, 2.2)
-                            * smoothstep(0.5, 4.0, y);
+            // 1. PECHO (Pectorales en la cara ANTERIOR: y < -1.0, z 124..143, |x| 1.0..15.5)
+            float chestMask = band(z, 124.0, 143.0, 2.8)
+                            * band(ax, 0.8, 15.5, 2.0)
+                            * smoothstep(0.0, -3.5, y);
 
-            // 2. CORE / ABDOMEN Y OBLICUOS (anterior, z 94..122.5, |x| < 14.8)
-            float coreMask = band(z, 94.0, 122.5, 3.0)
-                           * smoothstep(15.0, 11.5, ax)
+            // 2. CORE / ABDOMEN Y OBLICUOS (Cara ANTERIOR: y < -1.0, z 95..123, |x| < 13.5)
+            float coreMask = band(z, 95.0, 123.0, 2.8)
+                           * smoothstep(14.0, 10.5, ax)
+                           * smoothstep(0.0, -3.2, y);
+
+            // 3. ESPALDA (Dorsales, trapecio y romboides en la cara POSTERIOR: y > +1.0, z 104..149, |x| 0.8..17.5)
+            float backMask = band(z, 104.0, 149.0, 3.2)
+                           * band(ax, 0.8, 17.5, 2.2)
                            * smoothstep(0.0, 3.5, y);
 
-            // 3. ESPALDA (Dorsales, trapecio, romboides y lumbar: posterior, z 102..149, |x| < 18.2)
-            float backMask = band(z, 102.0, 149.0, 3.5)
-                           * smoothstep(18.5, 14.5, ax)
-                           * smoothstep(0.5, -3.0, y);
+            // 4. HOMBROS (Deltoides anterior, lateral y posterior: z 133.5..148.5, |x| 15.0..25.5)
+            float shoulderMask = band(z, 133.5, 148.5, 2.5)
+                               * band(ax, 15.0, 25.5, 2.0);
 
-            // 4. HOMBROS (Deltoides anterior, lateral y posterior: z 132..149.5, |x| 14.2..26.5)
-            float shoulderMask = band(z, 132.5, 149.5, 2.8)
-                               * band(ax, 14.2, 26.5, 2.2);
+            // 5. BRAZOS (Bíceps, tríceps y antebrazos sin tocar cadera ni dedos: z 98..133.5, |x| > 19.5)
+            float armsMask = band(z, 98.0, 133.5, 2.8)
+                           * smoothstep(18.8, 21.2, ax);
 
-            // 5. BRAZOS (Bíceps, tríceps y antebrazos: z 84..133.5, |x| > 17.2)
-            float armsMask = band(z, 84.0, 133.5, 3.0)
-                           * smoothstep(16.8, 19.5, ax);
-
-            // 6. PIERNAS Y GLÚTEOS (Cuádriceps, femorales, glúteos y pantorrillas: z 8..93.5, |x| < 24)
-            float legsMask = band(z, 8.0, 93.5, 3.5)
-                           * smoothstep(24.5, 20.0, ax);
+            // 6. PIERNAS Y GLÚTEOS (Cuádriceps, isquios, glúteos y pantorrillas sin pies ni manos: z 12..92, |x| < 21)
+            float legsMask = band(z, 12.0, 92.0, 3.2)
+                           * smoothstep(22.0, 18.5, ax);
 
             // Iluminación anatómica 3D (Rim Fresnel + Difusa suave para definir el relieve muscular)
             vec3 N = normalize(vNormalView);
@@ -130,10 +135,10 @@ function AnatomicalMuscleBody({
             float fresnel = pow(1.0 - ndotv, 2.2);
             float keyLight = clamp(dot(N, normalize(vec3(0.4, 0.6, 0.8))), 0.0, 1.0);
 
-            // Color base del cuerpo en reposo (Azul Ciber-Anatómico oscuro y elegante, no chillón)
+            // Color base del cuerpo en reposo
             vec3 baseBodyColor = vec3(0.08, 0.14, 0.24) + vec3(0.06, 0.22, 0.38) * keyLight + vec3(0.10, 0.45, 0.72) * fresnel * 0.75;
 
-            // Pulso sutil de energía en los músculos trabajados hoy
+            // Pulso sutil de energía en los músculos trabajados
             float pulse = 0.92 + 0.08 * sin(uTime * 3.2 - z * 0.08);
 
             // Combinar la activación de cada grupo muscular
@@ -148,7 +153,6 @@ function AnatomicalMuscleBody({
 
             // Color muscular activo con relieve 3D
             vec3 muscleGlow = activationPalette(maxActivation) * pulse;
-            // Añadir núcleo brillante y borde energético al músculo activo
             muscleGlow += vec3(1.0, 0.65, 0.3) * fresnel * maxActivation * 0.55;
             muscleGlow *= (0.75 + 0.45 * keyLight);
 
@@ -158,7 +162,7 @@ function AnatomicalMuscleBody({
             vec3 finalColor = mix(baseBodyColor, muscleGlow, smoothstep(0.05, 0.35, maxActivation));
             finalColor += vec3(0.2, 0.6, 1.0) * scanLine;
 
-            float alpha = mix(0.82, 0.96, smoothstep(0.05, 0.4, maxActivation));
+            float alpha = mix(0.84, 0.97, smoothstep(0.05, 0.4, maxActivation));
             gl_FragColor = vec4(finalColor, alpha);
           }
         `,
@@ -168,13 +172,13 @@ function AnatomicalMuscleBody({
     []
   );
 
-  // Material secundario muy sutil para ocultar el ruido interno (shorts/esqueleto secundario)
+  // Material secundario invisible para evitar manchas de las mallas secundarias (shorts/esqueleto interno)
   const GhostInnerMaterial = useMemo(
     () =>
       new THREE.MeshBasicMaterial({
         color: new THREE.Color("#0f172a"),
         transparent: true,
-        opacity: 0.08,
+        opacity: 0.0,
         depthWrite: false,
       }),
     []
@@ -184,18 +188,17 @@ function AnatomicalMuscleBody({
     scene.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
-        // Object_3 (34,584 vértices) es la piel/musculatura completa del cuerpo humano
         const vertexCount = mesh.geometry?.attributes?.position?.count || 0;
         if (vertexCount > 10000) {
           mesh.material = muscleShaderMaterial;
         } else {
           mesh.material = GhostInnerMaterial;
+          mesh.visible = false;
         }
       }
     });
   }, [scene, muscleShaderMaterial, GhostInnerMaterial]);
 
-  // Actualizar uniformes cuando cambia la rutina/músculos trabajados
   useEffect(() => {
     muscleShaderMaterial.uniforms.uChest.value = muscleActivation.chest;
     muscleShaderMaterial.uniforms.uBack.value = muscleActivation.back;
@@ -210,42 +213,25 @@ function AnatomicalMuscleBody({
 
     if (!groupRef.current) return;
 
-    // Si el usuario seleccionó un músculo específico en la barra inferior, orientar suavemente el cuerpo hacia esa zona
     if (focusedMuscle) {
-      let targetAngle = 0; // Frente (Pecho, Core, Piernas)
-      if (focusedMuscle === "espalda") targetAngle = Math.PI; // Espalda (180°)
-      else if (focusedMuscle === "hombros" || focusedMuscle === "brazos") targetAngle = -Math.PI * 0.35; // Perfil 3/4
+      // Orientar suavemente el cuerpo hacia la cara del músculo seleccionado:
+      // 0 rad = Frente (Pecho, Abdomen/Core, Cuádriceps)
+      // PI rad = Espalda (Dorsales, Trapecio)
+      // -0.45 rad = Perfil 3/4 (Hombros, Brazos)
+      let targetAngle = 0;
+      if (focusedMuscle === "espalda") targetAngle = Math.PI;
+      else if (focusedMuscle === "hombros" || focusedMuscle === "brazos") targetAngle = -0.55;
 
       const current = groupRef.current.rotation.y;
       const diff = Math.atan2(Math.sin(targetAngle - current), Math.cos(targetAngle - current));
-      groupRef.current.rotation.y += diff * Math.min(1, delta * 5);
+      groupRef.current.rotation.y += diff * Math.min(1, delta * 5.5);
     } else {
-      // Rotación continua suave para apreciar frente y espalda
       groupRef.current.rotation.y += delta * 0.35;
     }
   });
 
-  // Permitir tocar directamente el cuerpo 3D para consultar el músculo en esa altura/cara
-  const handleMeshClick = (e: any) => {
-    e.stopPropagation();
-    const localPoint = e.point;
-    if (!localPoint) return;
-
-    if (localPoint.y < -0.1) {
-      onSelectPart("piernas");
-    } else if (Math.abs(localPoint.x) > 0.22) {
-      onSelectPart("brazos");
-    } else if (localPoint.y > 0.38 && Math.abs(localPoint.x) > 0.14) {
-      onSelectPart("hombros");
-    } else if (localPoint.y > 0.25) {
-      onSelectPart(muscleActivation.back > muscleActivation.chest ? "espalda" : "chest");
-    } else {
-      onSelectPart("waist");
-    }
-  };
-
   return (
-    <group ref={groupRef} onClick={handleMeshClick}>
+    <group ref={groupRef}>
       <Center>
         <primitive object={scene} scale={1.22} />
       </Center>
