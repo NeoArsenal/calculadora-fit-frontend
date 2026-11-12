@@ -626,31 +626,48 @@ export default function WorkoutShareModal({
                             </div>
                         </div>
 
-                        {/* CONTROLES DE PERSONALIZACIÓN (SKINS + SUBIR FOTO GYM) */}
-                        <div className="flex items-center justify-center gap-2 flex-wrap">
-                            <button
-                                type="button"
-                                onClick={() => setSkin("cyber")}
-                                className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all ${
-                                    skin === "cyber"
-                                        ? "bg-blue-600 text-white border-blue-500 shadow-sm"
-                                        : "bg-muted/60 dark:bg-white/5 text-muted-foreground border-border dark:border-white/10 hover:text-foreground"
-                                }`}
-                            >
-                                ⚡ Cyber Dark
-                            </button>
+                        {/* DOCK ORDENADO DE 3 COLUMNAS PARA ESTILOS DE TARJETA (Alineado al ancho del póster) */}
+                        <div className="w-full max-w-[330px] mx-auto">
+                            <div className="grid grid-cols-3 p-1 rounded-2xl bg-muted/70 dark:bg-white/[0.04] border border-border dark:border-white/10 gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setSkin("cyber")}
+                                    className={`py-2 px-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                                        skin === "cyber"
+                                            ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                >
+                                    <span className="w-2 h-2 rounded-full bg-[#06070a] border border-blue-400 shrink-0" />
+                                    <span>Cyber</span>
+                                </button>
 
-                            <button
-                                type="button"
-                                onClick={() => fileInputRef.current?.click()}
-                                className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all flex items-center gap-1.5 ${
-                                    skin === "photo"
-                                        ? "bg-blue-600 text-white border-blue-500 shadow-sm"
-                                        : "bg-muted/60 dark:bg-white/5 text-muted-foreground border-border dark:border-white/10 hover:text-foreground"
-                                }`}
-                            >
-                                <Camera size={12} /> {bgPhotoUrl ? "Cambiar Foto" : "Foto Gym"}
-                            </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSkin("editorial")}
+                                    className={`py-2 px-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                                        skin === "editorial"
+                                            ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                >
+                                    <span className="w-2 h-2 rounded-full bg-white border border-slate-400 shrink-0" />
+                                    <span>Editorial</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className={`py-2 px-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                                        skin === "photo"
+                                            ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
+                                            : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                >
+                                    <Camera size={12} className="shrink-0" />
+                                    <span className="truncate">{bgPhotoUrl ? "Cambiar" : "Tu Foto"}</span>
+                                </button>
+                            </div>
                             <input
                                 ref={fileInputRef}
                                 type="file"
@@ -658,18 +675,6 @@ export default function WorkoutShareModal({
                                 onChange={handlePhotoUpload}
                                 className="hidden"
                             />
-
-                            <button
-                                type="button"
-                                onClick={() => setSkin("editorial")}
-                                className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all ${
-                                    skin === "editorial"
-                                        ? "bg-blue-600 text-white border-blue-500 shadow-sm"
-                                        : "bg-muted/60 dark:bg-white/5 text-muted-foreground border-border dark:border-white/10 hover:text-foreground"
-                                }`}
-                            >
-                                🧊 Editorial
-                            </button>
                         </div>
                     </div>
                 ) : (
@@ -765,3 +770,4 @@ export default function WorkoutShareModal({
         </Dialog>
     );
 }
+
