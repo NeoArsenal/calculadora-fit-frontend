@@ -41,14 +41,14 @@ export const registerUser = async (data: any) => {
 // Obtener todos los registros del usuario (Alonso = ID 1)
 export const getRecords = async (userId: number) => {
   const response = await fetch(`${BASE_URL}/records/user/${userId}`, { headers: getAuthHeaders(false) });
-  if (!response.ok) throw new Error('Error al obtener registros');
+  if (!response.ok) throw new Error(`${response.status} Error al obtener registros`);
   return response.json();
 };
 
 // Obtener perfil de usuario
 export const getUserProfile = async (userId: number) => {
   const response = await fetch(`${BASE_URL}/profiles/${userId}`, { headers: getAuthHeaders(false) });
-  if (!response.ok) throw new Error('Error al obtener perfil del usuario');
+  if (!response.ok) throw new Error(`${response.status} Error al obtener perfil del usuario`);
   return response.json();
 };
 

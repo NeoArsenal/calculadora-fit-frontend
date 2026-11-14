@@ -37,31 +37,60 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [loading, setLoading] = useState(true);
 
-  // Load auth state from local storage
+  // Helper para verificar si el JWT en localStorage ya expiró
+  const isTokenExpired = (token: string): boolean => {
+    try {
+      const payloadBase64 = token.split('.')[1];
+      if (!payloadBase64) return false;
+      const decoded = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')));
+      if (!decoded.exp) return false;
+      // Margen de 30 segundos
+      return Date.now() >= decoded.exp * 1000 - 30000;
+    } catch {
+      return false;
+    }
+  };
+
+  // Load auth state from local storage + caché local de perfil para evitar perfil vacío en móvil
   useEffect(() => {
     const token = localStorage.getItem('kallp_token');
     const userId = localStorage.getItem('kallp_user_id');
+    const cachedProfile = localStorage.getItem('kallp_cached_profile');
 
-    if (token && userId) {
+    if (cachedProfile) {
+      try {
+        setUserProfile(JSON.parse(cachedProfile));
+      } catch {}
+    }
+
+    if (token && userId && !isTokenExpired(token)) {
       setCurrentUserId(parseInt(userId));
       setIsAuthenticated(true);
     } else {
+      if (token && isTokenExpired(token)) {
+        localStorage.removeItem('kallp_token');
+        localStorage.removeItem('kallp_user_id');
+      }
       setIsAuthenticated(false);
       setCurrentUserId(null);
     }
     setAuthLoading(false);
   }, []);
 
-  const login = (token: string, userId: number) => {
+  const login = (token: string, userId: number, displayName?: string) => {
     localStorage.setItem('kallp_token', token);
     localStorage.setItem('kallp_user_id', userId.toString());
+    if (displayName) {
+      localStorage.setItem('kallp_user_name', displayName);
+    }
     setCurrentUserId(userId);
     setIsAuthenticated(true);
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('kallp_token');
     localStorage.removeItem('kallp_user_id');
+    localStorage.removeItem('kallp_cached_profile');
     setCurrentUserId(null);
     setIsAuthenticated(false);
     
@@ -70,7 +99,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setRecords([]);
     
     router.push('/login');
-  };
+  }, [router]);
 
   const loadEcosystem = useCallback(async () => {
     if (!CURRENT_USER_ID || !isAuthenticated) {
@@ -78,7 +107,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // Si el token expiró después de horas con la app en segundo plano en el celular, cerrar sesión limpiamente
+    const token = typeof window !== 'undefined' ? localStorage.getItem('kallp_token') : null;
+    if (!token || isTokenExpired(token)) {
+      toast.info("Tu sesión ha expirado. Vuelve a iniciar sesión.");
+      logout();
+      return;
+    }
+
     try {
+      let unauthorizedDetected = false;
+      const handleFetchError = <T,>(fallback: T) => (err: any): T => {
+        if (err && typeof err.message === 'string' && err.message.includes('401')) {
+          unauthorizedDetected = true;
+        }
+        return fallback;
+      };
+
       const [
         profileData,
         recordsData,
@@ -92,20 +137,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         routinesData,
         hydrationData
       ] = await Promise.all([
-        api.getUserProfile(CURRENT_USER_ID).catch(() => null),
-        api.getRecords(CURRENT_USER_ID).catch(() => []),
-        api.getNutrition(CURRENT_USER_ID).catch(() => null),
-        api.getWorkoutSessions(CURRENT_USER_ID).catch(() => []),
-        api.getGamification(CURRENT_USER_ID).catch(() => ({ currentStreak: 0 })),
-        api.getTotalVolume(CURRENT_USER_ID).catch(() => ({ totalVolume: 0 })),
-        getDashboardSummary(CURRENT_USER_ID).catch(() => null),
-        api.getSupplements().catch(() => []),
-        api.getSupplementLogs(CURRENT_USER_ID).catch(() => []),
-        api.getRoutines().catch(() => []),
-        api.getTodayWater(CURRENT_USER_ID).catch(() => ({ amountMl: 0 }))
+        api.getUserProfile(CURRENT_USER_ID).catch(handleFetchError(null)),
+        api.getRecords(CURRENT_USER_ID).catch(handleFetchError([])),
+        api.getNutrition(CURRENT_USER_ID).catch(handleFetchError(null)),
+        api.getWorkoutSessions(CURRENT_USER_ID).catch(handleFetchError([])),
+        api.getGamification(CURRENT_USER_ID).catch(handleFetchError({ currentStreak: 0 })),
+        api.getTotalVolume(CURRENT_USER_ID).catch(handleFetchError({ totalVolume: 0 })),
+        getDashboardSummary(CURRENT_USER_ID).catch(handleFetchError(null)),
+        api.getSupplements().catch(handleFetchError([])),
+        api.getSupplementLogs(CURRENT_USER_ID).catch(handleFetchError([])),
+        api.getRoutines().catch(handleFetchError([])),
+        api.getTodayWater(CURRENT_USER_ID).catch(handleFetchError({ amountMl: 0 }))
       ]);
 
-      setUserProfile(profileData);
+      if (unauthorizedDetected) {
+        toast.info("Tu sesión ha expirado. Por favor, ingresa nuevamente.");
+        logout();
+        return;
+      }
+
+      if (profileData) {
+        setUserProfile(profileData);
+        try {
+          localStorage.setItem('kallp_cached_profile', JSON.stringify(profileData));
+        } catch {}
+      }
       setRecords(recordsData);
       setNutrition(nutritionData);
       setTrainingSessions(sessionsData);
@@ -158,6 +214,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       loadEcosystem();
     }
   }, [loadEcosystem, authLoading]);
+
+  // Re-sincronizar automáticamente cuando el usuario vuelve a abrir la pestaña o desbloquea el celular después de horas
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isAuthenticated) {
+        loadEcosystem();
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => window.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isAuthenticated, loadEcosystem]);
 
   // Proteger rutas
   useEffect(() => {

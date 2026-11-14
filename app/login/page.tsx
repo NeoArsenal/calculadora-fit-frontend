@@ -36,9 +36,10 @@ export default function LoginPage() {
       
       // Ya sea que registremos o no, logueamos con las credenciales actuales
       const res = await loginUser({ email, password });
-      login(res.token, res.id);
+      const displayName = res.name || res.username || email.split('@')[0] || "Atleta";
+      login(res.token, res.id, displayName);
       
-      toast.success("¡Bienvenido a Kallp, " + res.username + "!");
+      toast.success(`¡Bienvenido a Kallp, ${displayName}!`);
       router.push('/');
     } catch (error: any) {
       console.error(error);
